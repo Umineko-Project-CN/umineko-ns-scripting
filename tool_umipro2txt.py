@@ -4,7 +4,7 @@ import shutil
 
 # 定义源目录和目标目录
 source_dir = 'story'
-target_dir = 'story_umipro'
+target_dir = 'story_umipro_cn'
 
 # 括号类
 BRACKET_replaces = {
@@ -56,7 +56,7 @@ if not os.path.exists(target_dir):
 
 # 遍历每个 ep 文件夹
 for ep in range(1, 9):
-    cn_folder = os.path.join(source_dir, f'ep{ep}', 'jp')
+    cn_folder = os.path.join(source_dir, f'ep{ep}', 'cn')
     
     # 确保 cn 文件夹存在
     if os.path.exists(cn_folder):
