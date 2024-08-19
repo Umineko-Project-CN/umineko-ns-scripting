@@ -5,8 +5,9 @@ jp_script_base = 'story_ns/umi'
 cn_script_base = 'story_umipro_cn/umi'
 start_line = 18467
 
-HALFWIDTH = '｢｣ｧｨｩｪｫｬｭｮｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｰｯ—､ﾟﾞ･｡'
-HALFWIDTH_REPLACE = '「」ぁぃぅぇぉゃゅょあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんーっ―、？！…。　'
+HALFWIDTH = "｢｣ｧｨｩｪｫｬｭｮｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｰｯ—､ﾟﾞ･｡`"
+HALFWIDTH_REPLACE = "「」ぁぃぅぇぉゃゅょあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんーっ―、？！…。　'"
+trans_table = str.maketrans(HALFWIDTH_REPLACE, HALFWIDTH)
 
 # 读取并处理rb文件
 with open('main.rb', 'r', encoding='utf-8') as f:
@@ -40,13 +41,23 @@ for ep in range(1, 9):
         # 遍历日文txt的每一行
         for i in range(len(lines_jp)):
             if i < len(lines_cn) and lines_cn[i]:
-                translation_table = str.maketrans(HALFWIDTH_REPLACE, HALFWIDTH)
-                lines_jp[i] = lines_jp[i].translate(translation_table)
-                replaced = False
+                lines_jp[i] = lines_jp[i].translate(trans_table)
+                lines_cn[i] = lines_cn[i].translate(trans_table)
+
+                # 保存所有匹配方式的结果及其位置
+                matches = []
+
                 for fun in [lambda x: x + '@', lambda x: x + "'", lambda x: x.strip() + '@', lambda x: x.strip() + "'"]:
-                    if fun(lines_jp[i]) in chapter_script and not replaced:
-                        chapter_script = chapter_script.replace(fun(lines_jp[i]), fun(lines_cn[i]), 1)
-                        replaced = True
+                    match = fun(lines_jp[i])
+                    pos = chapter_script.find(match)
+                    if pos != -1:
+                        matches.append((pos, match, fun(lines_cn[i])))
+
+                # 替换最早出现的匹配项
+                if matches:
+                    matches.sort()  # 按匹配项在脚本中的位置排序
+                    match0 = matches[0]
+                    chapter_script = chapter_script.replace(match0[1], match0[2], 1)
 
         output += chapter_script + '\n'
         target_script = target_script[line_idx:]
