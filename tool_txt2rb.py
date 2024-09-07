@@ -3,11 +3,12 @@ import re
 
 # 定义
 jp_script_base = 'story_ns/umi'
-cn_script_base = 'story_umipro_cn/umi'
+cn_script_base = 'story_cn/umi'
 start_line = 18467
 
 SPACE_pattern = r"([ﾟﾞ♪☆](@[a-z|\[\]](\.)?)*)@"
 SPACE_replace = r"{text}@"
+
 HALFWIDTH = "｢｣ｧｨｩｪｫｬｭｮｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｰｯ—､ﾟﾞ･｡`"
 HALFWIDTH_REPLACE = "「」ぁぃぅぇぉゃゅょあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんーっ―、？！…。　'"
 trans_table = str.maketrans(HALFWIDTH_REPLACE, HALFWIDTH)
