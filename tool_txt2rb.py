@@ -68,5 +68,5 @@ for ep in range(1, 9):
         target_script = target_script[line_idx:]
 
 # 将处理后的内容写回.rb文件
-with open('main_tr.rb', 'w', encoding='utf-8') as f:
+with open('script.rb', 'w', encoding='utf-8') as f:
     f.write(output + '\n' + '\n'.join(target_script))
