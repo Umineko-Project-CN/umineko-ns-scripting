@@ -22,7 +22,7 @@ BRACKET_replaces = {
 }
 
 OTHER_replaces = {
-    r"\{[abcefgmoy]:.*?:(.*?)\}": r"\n{text}"  # 其他特殊
+    r"\{[abcefgmoy]:.*?:(.*?)\}": r"{text}"  # 其他特殊
 }
 
 # 递归匹配与替换函数
