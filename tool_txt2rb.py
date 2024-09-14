@@ -6,7 +6,7 @@ jp_script_base = 'story_ns/umi'
 cn_script_base = 'story_cn/umi'
 start_line = 18467
 
-SPACE_pattern = r"([ﾟﾞ♪☆](@[a-z|\[\]](\.)?)*)@"
+SPACE_pattern = r"((@[a-z|\[\]](\.)?)*)@"
 SPACE_replace = r"{text}@"
 
 HALFWIDTH = "｢｣ｧｨｩｪｫｬｭｮｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｰｯ—､ﾟﾞ･｡`ゞ"
@@ -41,7 +41,6 @@ for ep in range(1, 9):
         line_idx = next((i for i, x in enumerate(chapter_script) if x.startswith('s.ins 0xa0, byte(1), ')), -1) + 1
         chapter_script = chapter_script[:line_idx]
         chapter_script = '\n'.join(chapter_script)
-        chapter_script = re.sub(SPACE_pattern, lambda m: SPACE_replace.format(text=m.group(1)), chapter_script)
 
         # 遍历日文txt的每一行
         for i in range(len(lines_jp)):
@@ -64,6 +63,8 @@ for ep in range(1, 9):
                     match0 = matches[0]
                     chapter_script = chapter_script.replace(match0[1], match0[2], 1)
 
+        # 删多余空格
+        chapter_script = re.sub(SPACE_pattern, lambda m: SPACE_replace.format(text=m.group(1)), chapter_script)
         output += chapter_script + '\n'
         target_script = target_script[line_idx:]
 

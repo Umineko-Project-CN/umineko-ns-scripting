@@ -23,10 +23,14 @@ CH_NUM_pattern = r"Story([0-9]+)"
 
 # 括号类
 BRACKET_replaces = {
+    r"@c900.@\[(.*?)@\]@c.": r"#c900.#<{text}#>#c.",  # 红字
+    r"@c279.@\[(.*?)@\]@c.": r"#c279.#<{text}#>#c.",  # 蓝字
+    r"@c960.@\[(.*?)@\]@c.": r"#c960.#<{text}#>#c.",  # 金字
+    r"@c649.(.*?)@c.": r"#c649.{text}#c.",  # 紫字
+    # r"@\{(.*?)@\}": r"{{i:{text}}}",  # @{???@} 粗体
     r"@\[(.*?)@\]": r"\n{text}\n",  # @[???@] 颜色停顿
     r"@\[(.*?)": r"\n{text}\n",  # @[???@] 颜色停顿补漏
     r"@c[0-9]+.(.*?)@c.": r"\n{text}\n",  # @c999.???@c. 颜色字
-    # r"@\{(.*?)@\}": r"{{i:{text}}}",  # @{???@} 粗体
     # r"@b(.*?).@<(.*?)@>": r"{kanji}",  # @b???@<???@> ruby注音
     # r"@<(.*?)@>": r"{text}"  # @<???@> 未知
     }
@@ -44,6 +48,13 @@ ENTER_patterns = [
 CODE_pattern = r"@[acvwosz](?:[a-zA-Z0-9_/|])*+\." # @x999/_ABC. 各类杂项长代码
 NORMAL_pattern = r"@[cekrtyz|-]" # @x 各类杂项短代码
 
+# 颜色字还原类
+r_COLOR_replaces = {
+    r"#c([0-9]+).": r"@c{text}.",
+    r"#<": r"@[",
+    r"#>": r"@]",
+    r"#c.": r"@c."
+}
 # 转换
 HALFWIDTH = '｢｣ｧｨｩｪｫｬｭｮｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｰｯ—､ﾟﾞ･｡'
 HALFWIDTH_REPLACE = '「」ぁぃぅぇぉゃゅょあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんーっ―、？！…。　'
@@ -115,6 +126,13 @@ for script_line in SCRIPT_lines:
                 # 处理 NORMAL_pattern
                 fine_line = re.sub(f"^(｢?)" + NORMAL_pattern, lambda m: m.group(1), fine_line)
                 fine_line = re.sub(NORMAL_pattern + f"$", "", fine_line)
+
+        # 2-x. 还原颜色字代码
+        for pattern, replace in r_COLOR_replaces.items():
+            if r"(" in pattern:
+                fine_line = re.sub(pattern, lambda m: replace.format(text=m.group(1)), fine_line)
+            else:
+                fine_line = re.sub(pattern, replace, fine_line)
             
         # 2-2. 切割包含 '\n' 的行
         if '\\n' in fine_line:
