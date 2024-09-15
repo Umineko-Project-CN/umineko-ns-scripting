@@ -11,7 +11,8 @@ BRACKET_replaces = {
     r"\{n\}": r"",  # 删除
     r"\{ruby:(.*?):(.*?)\}": r"【{ruby}】【{kanji}】",  # ruby注音
     r"p:4": r"p:四",
-    r"([0-9a-zA-Zè,.\?!'+-]{2,})": r"@<{text}@>",  # 英文字母
+    r"([0-9a-zA-Zè,.\?!%&'×÷=+-]{2,})": r"@<{text}@>",  # 英文字母
+    r"(?<=【)[^】]*?(@[<>])+[^】]*?(?=】)": r"@[<>]", # ruby注音内还原
     r"\{p:1:(.*?)\}": r"@c900.@[{text}@]@c.",  # 红字
     r"\{p:2:(.*?)\}": r"@c279.@[{text}@]@c.",  # 蓝字
     r"\{p:四1:(.*?)\}": r"@c960.@[{text}@]@c.",  # 金字
@@ -26,6 +27,25 @@ BRACKET_replaces = {
     r"【(.*?)】【(.*?)】": r"@b{ruby}.@<{kanji}@>",  # ruby注音
 }
 
+# BRACKET_replaces = {
+#     r"@b(.*?).@<(.*?)@>": r"【{ruby}】【{kanji}】",  # ruby注音
+#     r"@c900.": r"@#红左#",  # 红字
+#     r"@c279.": r"@#蓝左#",  # 蓝字
+#     r"@c960.": r"@#金左#",  # 金字
+#     r"@c649.": r"@#紫左#",  # 紫字
+#     r"@c.": r"@#色右#",  # 颜色字
+
+#     r"([0-9a-zA-Zè,.\?!%&'×÷=+-]{2,})": r"@<{text}@>",  # 英文字母
+#     r"(?<=【)[^】]*?(@[<>])+[^】]*?(?=】)": r"@[<>]", # ruby注音内还原
+    
+#     r"【(.*?)】【(.*?)】": r"@b{ruby}.@<{kanji}@>",  # ruby注音
+#     r"@#红左#": r"@c900.",  # 红字
+#     r"@#蓝左#": r"@c279.",  # 蓝字
+#     r"@#金左#": r"@c960.",  # 金字
+#     r"@#紫左#": r"@c649.",  # 紫字
+#     r"@#色右#": r"@c.",  # 颜色字
+# }
+
 OTHER_replaces = {
     r"\{[abcefgmoy]:.*?:(.*?)\}": r"{text}"  # 其他特殊
 }
@@ -37,6 +57,7 @@ if not os.path.exists(target_dir):
 # 遍历每个 ep 文件夹
 for ep in range(1, 9):
     cn_folder = os.path.join(source_dir, f'ep{ep}', 'cn')
+    # cn_folder = os.path.join(source_dir)
     
     # 确保 cn 文件夹存在
     if os.path.exists(cn_folder):
@@ -78,8 +99,8 @@ for ep in range(1, 9):
                         combined_text = re.sub(pattern, lambda m: replace.format(ruby=m.group(1), kanji=m.group(2)), combined_text)
                     elif r"text" in replace:
                         combined_text = re.sub(pattern, lambda m: replace.format(text=m.group(1)), combined_text)
-                    elif r"t1" in replace:
-                        combined_text = re.sub(pattern, lambda m: replace.format(t1=m.group(1), t2=m.group(2), t3=m.group(1)), combined_text)
+                    elif r"<>" in replace:
+                        combined_text = re.sub(pattern, lambda m: re.sub(replace, '', m.group()), combined_text)
                     else:
                         combined_text = re.sub(pattern, replace, combined_text)
 
