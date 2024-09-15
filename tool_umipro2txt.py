@@ -9,53 +9,26 @@ target_dir = 'story_cn'
 # 括号类
 BRACKET_replaces = {
     r"\{n\}": r"",  # 删除
+    r"\{ruby:(.*?):(.*?)\}": r"【{ruby}】【{kanji}】",  # ruby注音
+    r"p:4": r"p:四",
+    r"([0-9a-zA-Zè,.\?!']{2,})": r"@<{text}@>",  # 英文字母
     r"\{p:1:(.*?)\}": r"@c900.@[{text}@]@c.",  # 红字
     r"\{p:2:(.*?)\}": r"@c279.@[{text}@]@c.",  # 蓝字
-    r"\{p:41:(.*?)\}": r"@c960.@[{text}@]@c.",  # 金字
-    r"\{p:42:(.*?)\}": r"@c649.{text}@c.",  # 紫字
+    r"\{p:四1:(.*?)\}": r"@c960.@[{text}@]@c.",  # 金字
+    r"\{p:四2:(.*?)\}": r"@c649.{text}@c.",  # 紫字
     r"\{i:(.*?)\}": r"@{{{text}@}}", # 粗体
-    # r"\{p:[0-9]+:(.*?)\}": r"<ln>{text}<rn>",  # 颜色字
-    # r"<n>([…]+)<ln>": r"<ln>{text}",  # 颜色字外左标点
     r"([“]+)@c900.@\[": r"@c900.@[{text}",  # 颜色字外右标点
     r"@\]@c.([！？、，。ッ…]+)": r"{text}@]@c.",  # 颜色字外右标点
     r"@\]@c.([”]+)": r"{text}@]@c.",  # 颜色字外右标点
-    r"<[lr]n>": r"<n>",  # 颜色字外右标点
     r"\{t\}": r"<n>",  # 换行
     r"<n>　": r"<n>",
     r"\{[abcefgmoy]:.*?:(.*?)\}": r"{text}",  # 其他特殊
-    r"\{ruby:(.*?):(.*?)\}": r"{kanji}",
-    r"\{ruby:(.*?):(.*?)\}": r"@b{ruby}.@<{kanji}@>",  # ruby注音
+    r"【(.*?)】【(.*?)】": r"@b{ruby}.@<{kanji}@>",  # ruby注音
 }
 
 OTHER_replaces = {
     r"\{[abcefgmoy]:.*?:(.*?)\}": r"{text}"  # 其他特殊
 }
-
-# 递归匹配与替换函数
-def recursive_replace(text, patterns):
-    # 先找最外层的括号，优先替换
-    for pattern, replace in patterns.items():
-        def replace_func(m):
-            # 检查捕获组是否存在
-            if m.groups():
-                inner_text = m.group(1)
-                replaced_inner_text = recursive_replace(inner_text, patterns)
-            else:
-                replaced_inner_text = ""
-            
-            if r"kanji" in replace:
-                ruby, kanji = m.groups()
-                return replace.format(kanji=kanji, ruby=ruby)
-            elif r"text" in replace:
-                return replace.format(text=replaced_inner_text)
-            else:
-                return replace
-
-        # 使用正则表达式的替换函数处理
-        text = re.sub(pattern, replace_func, text)
-    
-    return text
-
 
 # 如果目标目录不存在，则创建它
 if not os.path.exists(target_dir):
@@ -99,7 +72,16 @@ for ep in range(1, 9):
                 placeholder = "<n>"
                 combined_text = placeholder.join(lines)
 
-                combined_text = recursive_replace(combined_text, BRACKET_replaces)      
+                # 替换
+                for pattern, replace in BRACKET_replaces.items():
+                    if r"kanji" in replace:
+                        combined_text = re.sub(pattern, lambda m: replace.format(ruby=m.group(1), kanji=m.group(2)), combined_text)
+                    elif r"text" in replace:
+                        combined_text = re.sub(pattern, lambda m: replace.format(text=m.group(1)), combined_text)
+                    elif r"t1" in replace:
+                        combined_text = re.sub(pattern, lambda m: replace.format(t1=m.group(1), t2=m.group(2), t3=m.group(1)), combined_text)
+                    else:
+                        combined_text = re.sub(pattern, replace, combined_text)
 
                 previous_combined_text = None
                 while combined_text != previous_combined_text:

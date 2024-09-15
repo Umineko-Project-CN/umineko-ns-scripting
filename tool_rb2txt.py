@@ -93,7 +93,7 @@ for script_line in SCRIPT_lines:
     rough_line = script_line
     # 1-1. @c、@b、BOLD 括号类整体去除
     for pattern, replace in BRACKET_replaces.items():
-        if pattern == r"@b(.*?).@<(.*?)@>":
+        if r"kanji" in replace:
             rough_line = re.sub(pattern, lambda m: replace.format(ruby=m.group(1), kanji=m.group(2)), rough_line)
         else:
             rough_line = re.sub(pattern, lambda m: replace.format(text=m.group(1)), rough_line)
@@ -129,7 +129,7 @@ for script_line in SCRIPT_lines:
 
         # 2-x. 还原颜色字代码
         for pattern, replace in r_COLOR_replaces.items():
-            if r"(" in pattern:
+            if r"text" in replace:
                 fine_line = re.sub(pattern, lambda m: replace.format(text=m.group(1)), fine_line)
             else:
                 fine_line = re.sub(pattern, replace, fine_line)
