@@ -2,8 +2,15 @@ import os
 import re
 
 # 定义
-jp_script_base = 'story_ns/umi'
-cn_script_base = 'story_cn/umi'
+jp_script_base = 'story_ns/'
+cn_script_base = 'story_cn/'
+ep_list = [
+    *(("umi" + str(i), list(range(0, 31))) for i in range(1, 9)),
+    ("tsubasa", list(range(1, 17))),
+    ("hane", list(range(1, 3))),
+    ("saku", list(range(1, 4))),
+    ("tsubasa", list(range(17, 20)))
+]
 start_line = 18467
 
 SPACE_pattern = r"((@[a-z|\[\]](\.)?)*)@"
@@ -22,9 +29,9 @@ output = '\n'.join(target_script[:start_line]) + '\n'
 target_script = target_script[start_line:]
 
 # 处理每个EP和章节
-for ep in range(1, 9):
-    print(f'Processing Episode {ep}')
-    for chapter in range(101):
+for ep, chapters in ep_list:
+    for chapter in chapters:
+        print(f'Processing Episode {ep} Chapter {chapter}')
         script_jp = f'{jp_script_base}{ep}_{chapter}.txt'
         script_cn = f'{cn_script_base}{ep}_{chapter}.txt'
         if not os.path.exists(script_jp):
@@ -62,7 +69,7 @@ for ep in range(1, 9):
                     matches.sort()  # 按匹配项在脚本中的位置排序
                     match0 = matches[0]
                     chapter_script = chapter_script.replace(match0[1], match0[2], 1)
-
+        
         # 删多余空格
         chapter_script = re.sub(SPACE_pattern, lambda m: SPACE_replace.format(text=m.group(1)), chapter_script)
         output += chapter_script + '\n'
