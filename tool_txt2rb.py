@@ -5,12 +5,12 @@ import re
 jp_script_base = 'story_ns/'
 cn_script_base = 'story_cn/'
 ep_list = [
-    *(("umi" + str(i), list(range(0, 31))) for i in range(1, 9)),
-    ("tsubasa", list(range(1, 17))),
-    ("hane", list(range(1, 3))),
-    ("saku", list(range(1, 4))),
-    ("tsubasa", list(range(17, 20)))
-]
+     *(("umi" + str(i), list(range(0, 31))) for i in range(1, 9)),
+     ("tsubasa", list(range(1, 16)) + [20]),
+     ("hane", list(range(1, 3))),
+     ("saku", list(range(1, 4))),
+     ("tsubasa", list(range(16, 20)))
+ ]
 start_line = 18467
 
 SPACE_pattern = r"((@[a-z|\[\]](\.)?)*)@"
@@ -46,7 +46,8 @@ for ep, chapters in ep_list:
         # 在 target_script 中查找章节的开始
         chapter_script = target_script[:]
         line_idx = next((i for i, x in enumerate(chapter_script) if x.startswith('s.ins 0xa0, byte(1), ')), -1) + 1
-        chapter_script = chapter_script[:line_idx]
+        if line_idx != 0:
+            chapter_script = chapter_script[:line_idx]
         chapter_script = '\n'.join(chapter_script)
 
         # 遍历日文txt的每一行
