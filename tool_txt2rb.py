@@ -87,6 +87,7 @@ name_map = {
     'ベルンカステル': '贝伦卡斯泰露'
 }
 
+
 # 读取并处理rb文件
 with open('main.rb', 'r', encoding='utf-8') as f:
     target_script = f.read().splitlines()
@@ -144,6 +145,67 @@ for ep, chapters in ep_list:
 # 修改人名名称
 for name_jp, name_cn in name_map.items():
     output = re.sub(rf"'{re.escape(name_jp)}\s?@", f"'{name_cn}@", output)
+
+# 修改章节标题、tip和人物介绍
+output = re.sub('\'うみねこのなく頃に','\'海猫鸣泣之时',output)
+with open('chapters.txt', 'r', encoding='utf-8') as rf:
+    chapter_lines = [line.strip() for line in rf.readlines()]
+with open('tips.txt', 'r', encoding='utf-8') as rf:
+    tips_lines = [line.strip() for line in rf.readlines()]
+with open('characters.txt', 'r', encoding='utf-8') as rf:
+    characters_lines = [line.strip() for line in rf.readlines()]
+
+# 解析tips和characters
+tips_pairs = []
+for i, line in enumerate(tips_lines, start=1):
+    parts = line.split(',')
+    tip1 = parts[0].strip().strip("'")
+    tip2 = parts[1].strip().strip("'")
+    tips_pairs.append((tip1, tip2))
+characters_pairs = []
+for i, line in enumerate(characters_lines, start=1):
+    parts = line.split(',')
+    character1 = parts[0].strip().strip("'")
+    character2 = parts[1].strip().strip("'")
+    characters_pairs.append((character1, character2))
+
+# 替换计数器
+chapter_index = 0
+tip_index = 0
+character_index = 0
+updated_lines = []
+
+tip_pattern = re.compile(
+    r"^(snr\.tip\s+([0-6]),\s+([0-9]|1[0-9]|2[0-6]),\s*)'([^']*)',\s*'([^']*)'(.*)$")
+character_pattern = re.compile(
+        r"^(segments\s*<<\s*\[\d+,\s*)'([^']*)',\s*'([^']*)'\s*(.*)$")
+for line in output.splitlines():
+    match_chapter = re.match(r'(s\.ins 0xa0, byte\(1\), )(.*)', line)
+    match_tip = tip_pattern.match(line)
+    match_char = character_pattern.match(line)
+    # 替换章节
+    if match_chapter and chapter_index < len(chapter_lines):
+        updated_lines.append(f"{match_chapter.group(1)}'{chapter_lines[chapter_index]}'\n")
+        chapter_index += 1
+    #替换tip
+    elif match_tip and tip_index < len(tips_pairs) :
+        prefix = match_tip.group(1)
+        suffix = match_tip.group(6)
+        new1, new2 = tips_pairs[tip_index]
+        tip_index += 1
+        new_line = f"{prefix}'{new1}', '{new2}'{suffix}\n"
+        updated_lines.append(new_line)
+    # 替换人物介绍
+    elif match_char and character_index < len(characters_pairs):
+        prefix = match_char.group(1)
+        suffix = match_char.group(4)
+        new1, new2 = characters_pairs[character_index]
+        character_index += 1
+        new_line = f"{prefix}'{new1}', '{new2}'{suffix}\n"
+        updated_lines.append(new_line)
+    else:
+        updated_lines.append(line + '\n')
+output = ''.join(updated_lines)
 
 # 将处理后的内容写回.rb文件
 with open('catbox\script.rb', 'w', encoding='utf-8') as f:
