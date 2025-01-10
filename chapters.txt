@@ -177,10 +177,10 @@ Story13 情人节的信
 Story14 樱太郎去炼狱山
 Story15 Arigato for 556
 Story20 Postscript
-Story01 朱志香与杀人电风扇
-Story02 戏书 No.xxx
+Story01 朱志香和杀人电风扇
+Story02 戏书 No,xxx
 Story01 吾等的告白
-Story02 Story02 Last note of the golden witch
+Story02 Last note of the golden witch
 茶会
 Story16 某魔女猎人的采访磁带
 Story17 召唤师的信
