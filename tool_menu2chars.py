@@ -12,14 +12,16 @@ end_line = ";bern quiz"
 
 # 匹配
 BRACKET_replaces = {
-    r"chars_6_3_ama_1": r"chars_6_3_enj_999", # EP6特殊顺序
-    r"(.*)chars_6_3_enj_2(.*)": r"", # EP6特殊顺序
-
+    # 特殊排序
+    r"chars_(.*?)_sak_": lambda m: rf"chars_{m.group(1)}_s99_", # 樱太郎
+    r"chars_6_3_ama_1": r"chars_6_3_enj_99", # EP6天草
+    r"(.*)chars_6_3_enj_2(.*)": r"", # EP6缘寿多余
+    # 符号替换
     r"\{n\}": r"@r", # 换行符
-    r"\{fit\}": r"",
+    r"\{fit\}": r"", # fit
     r"\{ruby:(.*?):(.*?)\}": lambda m: rf"@b{m.group(1)}.@<{m.group(2)}@>", # 注音
     r"\{p:3:(.*?)\}": lambda m: rf"{m.group(1)}", # 特殊字体
-    r"\{c:FF0000:(.*?)\}": lambda m: rf"@c900{m.group(1)}@c.",
+    r"\{c:FF0000:(.*?)\}": lambda m: rf"@c900{m.group(1)}@c.", # 红字
 }
 LINE_pattern = r'^.*?chars_(.*?),":s;#FFFFFF`.*?(.*?)@r@r(.*?)"'
 
