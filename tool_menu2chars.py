@@ -17,6 +17,7 @@ BRACKET_replaces = {
     r"chars_6_3_ama_1": r"chars_6_3_enj_99", # EP6天草
     r"(.*)chars_6_3_enj_2(.*)": r"", # EP6缘寿多余
     # 符号替换
+    r"\.": r"\\.", # 点号
     r"\{n\}": r"@r", # 换行符
     r"\{fit\}": r"", # fit
     r"\{ruby:(.*?):(.*?)\}": lambda m: rf"@b{m.group(1)}.@<{m.group(2)}@>", # 注音
