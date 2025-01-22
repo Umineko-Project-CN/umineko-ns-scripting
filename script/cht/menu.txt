@@ -2,8 +2,8 @@
 ;ep1
 stralias r_tips_1_1,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}肖像畫的碑文}"
 stralias r_tips_1_2,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的書信}"
-stralias r_tips_1_3,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的書信II}"
-stralias r_tips_1_4,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的書信III}"
+stralias r_tips_1_3,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的書信Ⅱ}"
+stralias r_tips_1_4,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的書信Ⅲ}"
 stralias r_tips_1_5,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的棋譜}"
 stralias r_tips_1_6,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}槍身鋸短的來復槍 金藏規格}"
 stralias r_tips_1_7,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}煉獄的七樁}"
@@ -11,9 +11,9 @@ stralias r_tips_1_7,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}煉獄的七樁}"
 ;ep2
 stralias r_tips_2_1,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}肖像畫的碑文}"
 stralias r_tips_2_2,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的書信}"
-stralias r_tips_2_3,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的書信II}"
-stralias r_tips_2_4,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的書信III}"
-stralias r_tips_2_5,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的書信IV}"
+stralias r_tips_2_3,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的書信Ⅱ}"
+stralias r_tips_2_4,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的書信Ⅲ}"
+stralias r_tips_2_5,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的書信Ⅳ}"
 stralias r_tips_2_6,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}魔女的棋譜}"
 stralias r_tips_2_7,":s;#C7C7C7#FFFFFF`{p:13:{fit}{w:700:}黃金蝶別針}"
 
