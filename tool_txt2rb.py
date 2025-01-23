@@ -21,6 +21,10 @@ start_line = 18467
 # 空格替换
 SPACE_pattern = r"((@[a-z|\[\]](\.)?)*)@"
 SPACE_replace = r"{text}@"
+# 匹配章节标题、Tips、Characters
+CHAPTER_pattern = r'(s\.ins 0xa0, byte\(1\), )(.*)'
+TIP_pattern = r"^(snr\.tip\s+([0-6]),\s+([0-9]|1[0-9]|2[0-6]),\s*)'([^']*)',\s*'([^']*)'(.*)$"
+CHAR_pattern = r"^(segments\s*<<\s*\[\d+,\s*)'([^']*)',\s*'([^']*)'\s*(.*)$"
 # 字符替换
 HALFWIDTH = "｢｣ｧｨｩｪｫｬｭｮｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｰｯ—､ﾟﾞ･｡`ゞ"
 HALFWIDTH_REPLACE = "「」ぁぃぅぇぉゃゅょあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんーっ―、？！…。　'，"
@@ -196,14 +200,10 @@ def main(target_script):
     character_index = 0
     updated_lines = []
 
-    tip_pattern = re.compile(
-        r"^(snr\.tip\s+([0-6]),\s+([0-9]|1[0-9]|2[0-6]),\s*)'([^']*)',\s*'([^']*)'(.*)$")
-    character_pattern = re.compile(
-            r"^(segments\s*<<\s*\[\d+,\s*)'([^']*)',\s*'([^']*)'\s*(.*)$")
     for line in output.splitlines():
-        match_chapter = re.match(r'(s\.ins 0xa0, byte\(1\), )(.*)', line)
-        match_tip = tip_pattern.match(line)
-        match_char = character_pattern.match(line)
+        match_chapter = re.match(CHAPTER_pattern, line)
+        match_tip = re.match(TIP_pattern, line)
+        match_char = re.match(CHAR_pattern, line)
         # 替换章节标题
         if match_chapter and chapter_index < len(chapter_lines):
             updated_lines.append(f"{match_chapter.group(1)}'{chapter_lines[chapter_index]}'\n")
