@@ -1,9 +1,14 @@
 import os
 import re
 
+# # # # # # # # # # # # # # #
 # 定义
+# # # # # # # # # # # # # # #
+
+# 路径
 jp_script_base = 'story_ns/'
 cn_script_base = 'story_cn/'
+# EP列表
 ep_list = [
     *(("umi" + str(i), list(range(0, 31))) for i in range(1, 9)),
     ("tsubasa", list(range(1, 16)) + [20]),
@@ -11,17 +16,19 @@ ep_list = [
     ("saku", list(range(1, 4))),
     ("tsubasa", list(range(16, 20)))
 ]
+# 开始行
 start_line = 18467
-
+# 空格替换
 SPACE_pattern = r"((@[a-z|\[\]](\.)?)*)@"
 SPACE_replace = r"{text}@"
-
+# 字符替换
 HALFWIDTH = "｢｣ｧｨｩｪｫｬｭｮｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｰｯ—､ﾟﾞ･｡`ゞ"
 HALFWIDTH_REPLACE = "「」ぁぃぅぇぉゃゅょあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんーっ―、？！…。　'，"
-trans_table = str.maketrans(HALFWIDTH_REPLACE, HALFWIDTH)
-
-# 人名映射表
+trans_table_jp = str.maketrans(HALFWIDTH_REPLACE[:-1], HALFWIDTH[:-1])
+trans_table_cn = str.maketrans(HALFWIDTH_REPLACE, HALFWIDTH)
+# 选项、人名替换
 name_map = {
+    # 选项等
     '選択肢':'选项',
     'ルシファー\000レヴィアタン\000サタン\000ベルフェゴール\000マモン\000ベルゼブブ\000アスモデウス\000':'路西法\000雷维阿坦\000撒旦\000贝露菲格露\000马蒙\000贝露赛布布\000阿斯磨德乌丝\000',
     'シエスタ００\000シエスタ４１０\000シエスタ４５\000シエスタ５５６\000':'谢丝塔 00\000谢丝塔 410\000谢丝塔 45\000谢丝塔 556\000',
@@ -29,6 +36,7 @@ name_map = {
     'ゼパル\000フルフル\000':'赛帕尔\000芙尔芙尔\000',
     '汝は、猫を殺すか、否か':'汝是否要将猫杀死',
     '殺す\000否\000':'杀\000否\000',
+    # 人名
     'ベルフェゴール': '贝露菲格露',
     'ウィラード・Ｈ・ライト': '威拉德·H·莱特',
     'ウィッチハンター三神': '魔女猎人三神',
@@ -94,126 +102,147 @@ name_map = {
     'ベルンカステル': '贝伦卡斯泰露'
 }
 
+# # # # # # #
+# 主处理
+# # # # # # #
+
+def main(target_script):
+    
+    # # # # # # # # # # # # # # #
+    # 正文部分
+    # # # # # # # # # # # # # # #
+
+    # 输出的初始部分
+    output = '\n'.join(target_script[:start_line]) + '\n'
+    target_script = target_script[start_line:]
+
+    # 处理每个EP和章节
+    for ep, chapters in ep_list:
+        for chapter in chapters:
+            print(f'Processing Episode {ep} Chapter {chapter}')
+            script_jp = f'{jp_script_base}{ep}_{chapter}.txt'
+            script_cn = f'{cn_script_base}{ep}_{chapter}.txt'
+            if not os.path.exists(script_jp):
+                break
+
+            # 读取日文和中文的txt文件
+            with open(script_jp, 'r', encoding='utf-8') as f:
+                lines_jp = f.read().splitlines()
+            with open(script_cn, 'r', encoding='utf-8') as f:
+                lines_cn = f.read().splitlines()
+
+            # 在 target_script 中查找章节的开始
+            chapter_script = target_script[:]
+            line_idx = next((i for i, x in enumerate(chapter_script) if x.startswith('s.ins 0xa0, byte(1), ')), len(chapter_script)) + 1
+            chapter_script = chapter_script[:line_idx]
+            chapter_script = '\n'.join(chapter_script)
+
+            # 遍历日文txt的每一行
+            for i in range(len(lines_jp)):
+                if i < len(lines_cn) and lines_cn[i]:
+                    lines_jp[i] = lines_jp[i].translate(trans_table_jp)
+                    lines_cn[i] = lines_cn[i].translate(trans_table_cn)
+
+                    # 保存所有匹配方式的结果及其位置
+                    matches = []
+
+                    for fun in [lambda x: x + '@', lambda x: x + "'", lambda x: x.strip() + '@', lambda x: x.strip() + "'"]:
+                        match = fun(lines_jp[i])
+                        pos = chapter_script.find(match)
+                        if pos != -1:
+                            matches.append((pos, match, fun(lines_cn[i])))
+
+                    # 替换最早出现的匹配项
+                    if matches:
+                        matches.sort()  # 按匹配项在脚本中的位置排序
+                        match0 = matches[0]
+                        chapter_script = chapter_script.replace(match0[1], match0[2], 1)
+            # 删多余空格
+            chapter_script = re.sub(SPACE_pattern, lambda m: SPACE_replace.format(text=m.group(1)), chapter_script)
+            output += chapter_script + '\n'
+            target_script = target_script[line_idx:]
+
+
+    # # # # # # # # # # # # # # #
+    # 章节标题、Tips、Characters部分
+    # # # # # # # # # # # # # # #
+
+    # 修改章节标题、Tips和Characters
+    output = re.sub('\'うみねこのなく頃に','\'海猫鸣泣之时',output)
+    with open('chapters.txt', 'r', encoding='utf-8') as rf:
+        chapter_lines = [line.strip() for line in rf.readlines()]
+    with open('tips.txt', 'r', encoding='utf-8') as rf:
+        tips_lines = [line.strip() for line in rf.readlines()]
+    with open('characters.txt', 'r', encoding='utf-8') as rf:
+        characters_lines = [line.strip() for line in rf.readlines()]
+
+    # 解析Tips和Characters
+    tips_pairs = []
+    for i, line in enumerate(tips_lines, start=1):
+        parts = line.split(',')
+        tip1 = parts[0].strip().strip("'")
+        tip2 = parts[1].strip().strip("'")
+        tips_pairs.append((tip1, tip2))
+    characters_pairs = []
+    for i, line in enumerate(characters_lines, start=1):
+        parts = line.split(',')
+        character1 = parts[0].strip().strip("'")
+        character2 = parts[1].strip().strip("'")
+        characters_pairs.append((character1, character2))
+
+    # 替换计数器
+    chapter_index = 0
+    tip_index = 0
+    character_index = 0
+    updated_lines = []
+
+    tip_pattern = re.compile(
+        r"^(snr\.tip\s+([0-6]),\s+([0-9]|1[0-9]|2[0-6]),\s*)'([^']*)',\s*'([^']*)'(.*)$")
+    character_pattern = re.compile(
+            r"^(segments\s*<<\s*\[\d+,\s*)'([^']*)',\s*'([^']*)'\s*(.*)$")
+    for line in output.splitlines():
+        match_chapter = re.match(r'(s\.ins 0xa0, byte\(1\), )(.*)', line)
+        match_tip = tip_pattern.match(line)
+        match_char = character_pattern.match(line)
+        # 替换章节标题
+        if match_chapter and chapter_index < len(chapter_lines):
+            updated_lines.append(f"{match_chapter.group(1)}'{chapter_lines[chapter_index]}'\n")
+            chapter_index += 1
+        #替换Tips
+        elif match_tip and tip_index < len(tips_pairs) :
+            prefix = match_tip.group(1)
+            suffix = match_tip.group(6)
+            new1, new2 = tips_pairs[tip_index]
+            tip_index += 1
+            new_line = f"{prefix}'{new1}', '{new2}'{suffix}\n"
+            updated_lines.append(new_line)
+        # 替换Characters
+        elif match_char and character_index < len(characters_pairs):
+            prefix = match_char.group(1)
+            suffix = match_char.group(4)
+            new1, new2 = characters_pairs[character_index]
+            character_index += 1
+            new_line = f"{prefix}'{new1}', '{new2}'{suffix}\n"
+            updated_lines.append(new_line)
+        else:
+            updated_lines.append(line + '\n')
+    output = ''.join(updated_lines)
+
+    # 修改人名
+    for name_jp, name_cn in name_map.items():
+        output = re.sub(rf"'{re.escape(name_jp)}\s?", f"'{name_cn}", output)
+
+    return output
+
+# # # # # # #
+# 读取与保存
+# # # # # # #
 
 # 读取并处理rb文件
 with open('main.rb', 'r', encoding='utf-8') as f:
     target_script = f.read().splitlines()
 
-# 输出的初始部分
-output = '\n'.join(target_script[:start_line]) + '\n'
-target_script = target_script[start_line:]
-
-# 处理每个EP和章节
-for ep, chapters in ep_list:
-    for chapter in chapters:
-        print(f'Processing Episode {ep} Chapter {chapter}')
-        script_jp = f'{jp_script_base}{ep}_{chapter}.txt'
-        script_cn = f'{cn_script_base}{ep}_{chapter}.txt'
-        if not os.path.exists(script_jp):
-            break
-
-        # 读取日文和中文的txt文件
-        with open(script_jp, 'r', encoding='utf-8') as f:
-            lines_jp = f.read().splitlines()
-        with open(script_cn, 'r', encoding='utf-8') as f:
-            lines_cn = f.read().splitlines()
-
-        # 在 target_script 中查找章节的开始
-        chapter_script = target_script[:]
-        line_idx = next((i for i, x in enumerate(chapter_script) if x.startswith('s.ins 0xa0, byte(1), ')), len(chapter_script)) + 1
-        chapter_script = chapter_script[:line_idx]
-        chapter_script = '\n'.join(chapter_script)
-
-        # 遍历日文txt的每一行
-        for i in range(len(lines_jp)):
-            if i < len(lines_cn) and lines_cn[i]:
-                lines_jp[i] = lines_jp[i].translate(trans_table)
-                lines_cn[i] = lines_cn[i].translate(trans_table)
-
-                # 保存所有匹配方式的结果及其位置
-                matches = []
-
-                for fun in [lambda x: x + '@', lambda x: x + "'", lambda x: x.strip() + '@', lambda x: x.strip() + "'"]:
-                    match = fun(lines_jp[i])
-                    pos = chapter_script.find(match)
-                    if pos != -1:
-                        matches.append((pos, match, fun(lines_cn[i])))
-
-                # 替换最早出现的匹配项
-                if matches:
-                    matches.sort()  # 按匹配项在脚本中的位置排序
-                    match0 = matches[0]
-                    chapter_script = chapter_script.replace(match0[1], match0[2], 1)
-        # 删多余空格
-        chapter_script = re.sub(SPACE_pattern, lambda m: SPACE_replace.format(text=m.group(1)), chapter_script)
-        output += chapter_script + '\n'
-        target_script = target_script[line_idx:]
-
-
-# 修改章节标题、tip和人物介绍
-output = re.sub('\'うみねこのなく頃に','\'海猫鸣泣之时',output)
-with open('chapters.txt', 'r', encoding='utf-8') as rf:
-    chapter_lines = [line.strip() for line in rf.readlines()]
-with open('tips.txt', 'r', encoding='utf-8') as rf:
-    tips_lines = [line.strip() for line in rf.readlines()]
-with open('characters.txt', 'r', encoding='utf-8') as rf:
-    characters_lines = [line.strip() for line in rf.readlines()]
-
-# 解析tips和characters
-tips_pairs = []
-for i, line in enumerate(tips_lines, start=1):
-    parts = line.split(',')
-    tip1 = parts[0].strip().strip("'")
-    tip2 = parts[1].strip().strip("'")
-    tips_pairs.append((tip1, tip2))
-characters_pairs = []
-for i, line in enumerate(characters_lines, start=1):
-    parts = line.split(',')
-    character1 = parts[0].strip().strip("'")
-    character2 = parts[1].strip().strip("'")
-    characters_pairs.append((character1, character2))
-
-# 替换计数器
-chapter_index = 0
-tip_index = 0
-character_index = 0
-updated_lines = []
-
-tip_pattern = re.compile(
-    r"^(snr\.tip\s+([0-6]),\s+([0-9]|1[0-9]|2[0-6]),\s*)'([^']*)',\s*'([^']*)'(.*)$")
-character_pattern = re.compile(
-        r"^(segments\s*<<\s*\[\d+,\s*)'([^']*)',\s*'([^']*)'\s*(.*)$")
-for line in output.splitlines():
-    match_chapter = re.match(r'(s\.ins 0xa0, byte\(1\), )(.*)', line)
-    match_tip = tip_pattern.match(line)
-    match_char = character_pattern.match(line)
-    # 替换章节
-    if match_chapter and chapter_index < len(chapter_lines):
-        updated_lines.append(f"{match_chapter.group(1)}'{chapter_lines[chapter_index]}'\n")
-        chapter_index += 1
-    #替换tip
-    elif match_tip and tip_index < len(tips_pairs) :
-        prefix = match_tip.group(1)
-        suffix = match_tip.group(6)
-        new1, new2 = tips_pairs[tip_index]
-        tip_index += 1
-        new_line = f"{prefix}'{new1}', '{new2}'{suffix}\n"
-        updated_lines.append(new_line)
-    # 替换人物介绍
-    elif match_char and character_index < len(characters_pairs):
-        prefix = match_char.group(1)
-        suffix = match_char.group(4)
-        new1, new2 = characters_pairs[character_index]
-        character_index += 1
-        new_line = f"{prefix}'{new1}', '{new2}'{suffix}\n"
-        updated_lines.append(new_line)
-    else:
-        updated_lines.append(line + '\n')
-output = ''.join(updated_lines)
-
-# 修改人名名称
-for name_jp, name_cn in name_map.items():
-    output = re.sub(rf"'{re.escape(name_jp)}\s?", f"'{name_cn}", output)
+output = main(target_script)
 
 # 将处理后的内容写回.rb文件
 with open('catbox\script.rb', 'w', encoding='utf-8') as f:
