@@ -22,6 +22,13 @@ trans_table = str.maketrans(HALFWIDTH_REPLACE, HALFWIDTH)
 
 # 人名映射表
 name_map = {
+    '選択肢':'选项',
+    'ルシファー\000レヴィアタン\000サタン\000ベルフェゴール\000マモン\000ベルゼブブ\000アスモデウス\000':'路西法\000雷维阿坦\000撒旦\000贝露菲格露\000马蒙\000贝露赛布布\000阿斯磨德乌丝\000',
+    'シエスタ００\000シエスタ４１０\000シエスタ４５\000シエスタ５５６\000':'谢丝塔 00\000谢丝塔 410\000谢丝塔 45\000谢丝塔 556\000',
+    'ドラノール\000コーネリア\000ガートルード\000':'德拉诺尔\000柯内莉亚\000格德鲁特\000',
+    'ゼパル\000フルフル\000':'赛帕尔\000芙尔芙尔\000',
+    '汝は、猫を殺すか、否か':'汝是否要将猫杀死',
+    '殺す\000否\000':'杀\000否\000',
     'ベルフェゴール': '贝露菲格露',
     'ウィラード・Ｈ・ライト': '威拉德·H·莱特',
     'ウィッチハンター三神': '魔女猎人三神',
@@ -142,9 +149,6 @@ for ep, chapters in ep_list:
         output += chapter_script + '\n'
         target_script = target_script[line_idx:]
 
-# 修改人名名称
-for name_jp, name_cn in name_map.items():
-    output = re.sub(rf"'{re.escape(name_jp)}\s?@", f"'{name_cn}@", output)
 
 # 修改章节标题、tip和人物介绍
 output = re.sub('\'うみねこのなく頃に','\'海猫鸣泣之时',output)
@@ -206,6 +210,10 @@ for line in output.splitlines():
     else:
         updated_lines.append(line + '\n')
 output = ''.join(updated_lines)
+
+# 修改人名名称
+for name_jp, name_cn in name_map.items():
+    output = re.sub(rf"'{re.escape(name_jp)}\s?", f"'{name_cn}", output)
 
 # 将处理后的内容写回.rb文件
 with open('catbox\script.rb', 'w', encoding='utf-8') as f:
