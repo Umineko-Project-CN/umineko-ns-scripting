@@ -110,7 +110,7 @@ name_map = {
 # 主处理
 # # # # # # #
 
-def main(target_script):
+def main(target_script, chapter_lines, tips_lines, characters_lines):
     
     # # # # # # # # # # # # # # #
     # 正文部分
@@ -173,12 +173,6 @@ def main(target_script):
 
     # 修改章节标题、Tips和Characters
     output = re.sub('\'うみねこのなく頃に','\'海猫鸣泣之时',output)
-    with open('chapters.txt', 'r', encoding='utf-8') as rf:
-        chapter_lines = [line.strip() for line in rf.readlines()]
-    with open('tips.txt', 'r', encoding='utf-8') as rf:
-        tips_lines = [line.strip() for line in rf.readlines()]
-    with open('characters.txt', 'r', encoding='utf-8') as rf:
-        characters_lines = [line.strip() for line in rf.readlines()]
 
     # 解析Tips和Characters
     tips_pairs = []
@@ -232,7 +226,7 @@ def main(target_script):
     for name_jp, name_cn in name_map.items():
         output = re.sub(rf"'{re.escape(name_jp)}\s?", f"'{name_cn}", output)
 
-    return output
+    return output, target_script
 
 # # # # # # #
 # 读取与保存
@@ -241,9 +235,14 @@ def main(target_script):
 # 读取并处理rb文件
 with open('main.rb', 'r', encoding='utf-8') as f:
     target_script = f.read().splitlines()
-
-output = main(target_script)
+with open('chapters.txt', 'r', encoding='utf-8') as rf:
+    chapter_lines = [line.strip() for line in rf.readlines()]
+with open('tips.txt', 'r', encoding='utf-8') as rf:
+    tips_lines = [line.strip() for line in rf.readlines()]
+with open('characters.txt', 'r', encoding='utf-8') as rf:
+    characters_lines = [line.strip() for line in rf.readlines()]
+output, trans_target_script = main(target_script, chapter_lines, tips_lines, characters_lines)
 
 # 将处理后的内容写回.rb文件
 with open('catbox\script.rb', 'w', encoding='utf-8') as f:
-    f.write(output + '\n' + '\n'.join(target_script))
+    f.write(output + '\n' + '\n'.join(trans_target_script))
