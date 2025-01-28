@@ -1,5 +1,6 @@
 import os
 import re
+import copy
 
 # # # # # # # # # # # # # # #
 # 定义
@@ -26,10 +27,10 @@ CHAPTER_pattern = r'(s\.ins 0xa0, byte\(1\), )(.*)'
 TIP_pattern = r"^(snr\.tip\s+([0-6]),\s+([0-9]|1[0-9]|2[0-6]),\s*)'([^']*)',\s*'([^']*)'(.*)$"
 CHAR_pattern = r"^(segments\s*<<\s*\[\d+,\s*)'([^']*)',\s*'([^']*)'\s*(.*)$"
 # 字符替换
-HALFWIDTH = "｢｣ｧｨｩｪｫｬｭｮｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｰｯ—､ﾟﾞ･｡`ゞ"
-HALFWIDTH_REPLACE = "「」ぁぃぅぇぉゃゅょあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんーっ―、？！…。　'，"
+HALFWIDTH = "—｢｣ｧｨｩｪｫｬｭｮｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｰｯ､ﾟﾞ･｡`ゞ"
+HALFWIDTH_REPLACE = "―「」ぁぃぅぇぉゃゅょあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんーっ、？！…。　'，"
 trans_table_jp = str.maketrans(HALFWIDTH_REPLACE[:-1], HALFWIDTH[:-1])
-trans_table_cn = str.maketrans(HALFWIDTH_REPLACE, HALFWIDTH)
+trans_table_cn = str.maketrans(HALFWIDTH_REPLACE[1:], HALFWIDTH[1:])
 # 选项、人名替换
 name_map = {
     # 选项等
@@ -132,6 +133,9 @@ def main(target_script, chapter_lines, tips_lines, characters_lines):
             # 读取日文和中文的txt文件
             with open(script_jp, 'r', encoding='utf-8') as f:
                 lines_jp = f.read().splitlines()
+                # 翼1特殊处理
+                if ep == "tsubasa" and chapter == 1:
+                    lines_jp_nc = copy.deepcopy(lines_jp)
             with open(script_cn, 'r', encoding='utf-8') as f:
                 lines_cn = f.read().splitlines()
 
@@ -152,9 +156,14 @@ def main(target_script, chapter_lines, tips_lines, characters_lines):
 
                     for fun in [lambda x: x + '@', lambda x: x + "'", lambda x: x.strip() + '@', lambda x: x.strip() + "'"]:
                         match = fun(lines_jp[i])
+                        match_nc = fun(lines_jp_nc[i]) if ep == "tsubasa" and chapter == 1 else None # 翼1特殊处理
                         pos = chapter_script.find(match)
+                        pos_nc = chapter_script.find(match_nc) if match_nc else -1 # 翼1特殊处理
+
                         if pos != -1:
                             matches.append((pos, match, fun(lines_cn[i])))
+                        elif pos_nc != -1:
+                            matches.append((pos_nc, match_nc, fun(lines_cn[i]))) # 翼1特殊处理
 
                     # 替换最早出现的匹配项
                     if matches:
