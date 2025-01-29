@@ -111,7 +111,7 @@ def chars_set():
     # 所有字符集
     charset_list =  sorted(list(charset))
     # Shift-JIS中存在，GB2312、Big5中不存在的字符
-    shiftjis_no_big5 = sorted(list(shiftjis_chars - gb2312_chars - big5_chars))不存在的字符
+    shiftjis_no_big5 = sorted(list(shiftjis_chars - gb2312_chars - big5_chars))
     # Shift-JIS字符集
     shiftjis = sorted(list(shiftjis_chars))
 
