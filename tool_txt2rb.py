@@ -31,6 +31,10 @@ HALFWIDTH = "—｢｣ｧｨｩｪｫｬｭｮｱｲｳｴｵｶｷｸｹｺｻ�
 HALFWIDTH_REPLACE = "―「」ぁぃぅぇぉゃゅょあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんーっ、？！…。　'，"
 trans_table_jp = str.maketrans(HALFWIDTH_REPLACE[:-1], HALFWIDTH[:-1])
 trans_table_cn = str.maketrans(HALFWIDTH_REPLACE[1:], HALFWIDTH[1:])
+# Chapters字符替換
+CHAPTER_hans = "东两为义乡书亚亲仪们伙伞传伦侦关则剧动劳厅另唤围圣场备复实宫宾对尔岁岛崭师帕带开忆恶戏战户择时朵杀杂检樱橱步每滩炼烦爱狱猎现电盘种笼类紧红终结绘缘节苏获萨蓝观规议记访证诞语误说请谁谈谜谢贝贵赛轩轻辑达还这迟选逻释钥锅错门问队难项预题风馆验骗黑"
+CHAPTER_hans_REPLACE = "辧辷迚迯逎逓逧逹遖邉邨醗釖釛釟釡釶釼鈎鈩鈬銹鋲錺錻鍄鎭鎹鏥鐚鐡鑁鑓鑚鑛閇閊閖閙閠閧陦隲靤靫靱靹鞆鞐韈韮韲頚頴頽顋颪飃飜飮餝餠饂馼駈駲騨髞髢髴鬪鮃鮖鮗鮟鮴鯏鯑鯒鯣鯱鯲鯵鰄鰊鰌鰐鰕鰛鰮鰯鰰鰺鱇鱚鱶鳫鳬鳰鴎鴪鴫鴬鵄鵆鵈鵐鵞鵤鵺鶫鷄鷆麁麕麪麹麿鼈鼡龝"
+trans_table_chapter = str.maketrans(CHAPTER_hans, CHAPTER_hans_REPLACE)
 # 选项、人名替换
 name_map = {
     # 选项等
@@ -198,9 +202,9 @@ def main(target_script, chapter_lines, tips_lines, characters_lines):
         characters_pairs.append((character1, character2))
 
     # 替换计数器
-    chapter_index = 0
-    tip_index = 0
-    character_index = 0
+    chapter_i = 0
+    tip_i = 0
+    character_i = 0
     updated_lines = []
 
     for line in output.splitlines():
@@ -208,23 +212,24 @@ def main(target_script, chapter_lines, tips_lines, characters_lines):
         match_tip = re.match(TIP_pattern, line)
         match_char = re.match(CHAR_pattern, line)
         # 替换章节标题
-        if match_chapter and chapter_index < len(chapter_lines):
-            updated_lines.append(f"{match_chapter.group(1)}'{chapter_lines[chapter_index]}'\n")
-            chapter_index += 1
+        if match_chapter and chapter_i < len(chapter_lines):
+            chapter_line = chapter_lines[chapter_i].translate(trans_table_chapter) # 替换章节标题字符
+            updated_lines.append(f"{match_chapter.group(1)}'{chapter_line}'\n")
+            chapter_i += 1
         #替换Tips
-        elif match_tip and tip_index < len(tips_pairs) :
+        elif match_tip and tip_i < len(tips_pairs) :
             prefix = match_tip.group(1)
             suffix = match_tip.group(6)
-            new1, new2 = tips_pairs[tip_index]
-            tip_index += 1
+            new1, new2 = tips_pairs[tip_i]
+            tip_i += 1
             new_line = f"{prefix}'{new1}', '{new2}'{suffix}\n"
             updated_lines.append(new_line)
         # 替换Characters
-        elif match_char and character_index < len(characters_pairs):
+        elif match_char and character_i < len(characters_pairs):
             prefix = match_char.group(1)
             suffix = match_char.group(4)
-            new1, new2 = characters_pairs[character_index]
-            character_index += 1
+            new1, new2 = characters_pairs[character_i]
+            character_i += 1
             new_line = f"{prefix}'{new1}', '{new2}'{suffix}\n"
             updated_lines.append(new_line)
         else:
