@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import unicodedata
 from itertools import chain
 
@@ -8,6 +9,13 @@ cn_path = 'story_cn'
 jp_path = 'story_ns'
 chap_path = 'chapters.txt'
 output_path = 'catbox/replace_chars.txt'
+
+# 待改字体库
+# f_medium_lib = "/f_medium"
+# f_bold_lib = "/f_bold"
+# f_system_lib = "/f_system"
+# font_libs = [f_medium_lib, f_bold_lib, f_system_lib]
+
 # 不属于GB2312、Shift-JIS范围的汉字
 add_set = ['呣', '呴', '咘', '咜', '哱', '唦', '唭', '啨', '啰', '喼', '嗙', '嗞', '嗰', '嘡', '瘆', '祂', '觍']
 
@@ -97,11 +105,15 @@ def chars_set():
                 continue
 
     charset = gb2312_chars.union(shiftjis_chars).union(nonchinese_chars)
-    
-    replace_chars = sorted(list(gbk_chars - shiftjis_chars)) # GBK中存在，Shift-JIS中不存在的字符
-    charset_list =  sorted(list(charset)) # 所有字符集
-    shiftjis_no_big5 = sorted(list(shiftjis_chars - big5_chars)) # Shift-JIS中存在，Big5中不存在的字符
-    shiftjis = sorted(list(shiftjis_chars)) # Shift-JIS字符集
+
+    # GBK中存在，Shift-JIS中不存在的字符
+    replace_chars = sorted(list(gbk_chars - shiftjis_chars))
+    # 所有字符集
+    charset_list =  sorted(list(charset))
+    # Shift-JIS中存在，GB2312、Big5中不存在的字符
+    shiftjis_no_big5 = sorted(list(shiftjis_chars - gb2312_chars - big5_chars))不存在的字符
+    # Shift-JIS字符集
+    shiftjis = sorted(list(shiftjis_chars))
 
     return(replace_chars, charset_list, shiftjis_no_big5, shiftjis)
 
@@ -146,7 +158,7 @@ elif mode in [1, 2]:
         print(f"add_set = {extra_chars}" )
 
     elif mode == 2:
-         # Shift-JIS ( - Big5) 中存在，文本中不存在的字符
+         # Shift-JIS ( - GB2312 - Big5) 中存在，文本中不存在的字符
         extra_chars = sorted(set(text_set) - set(text))
         extra_uni = unicode_10(extra_chars)
          # Chapters中存在，Shift-JIS中不存在的字符
@@ -157,10 +169,39 @@ elif mode in [1, 2]:
         convert_extra_chars = extra_chars[-len(chap_extra_chars):]
         convert_extra_uni = extra_uni[-len(chap_extra_chars):]
 
-        # 建立转换表
-        chars_map = {chap_char: convert_char for chap_char, convert_char in zip(chap_extra_chars, convert_extra_chars)}
-        uni_map = {chap_uni: convert_uni for chap_uni, convert_uni in zip(chap_extra_uni, convert_extra_uni)}
+        # print要转换的汉字
+        print(f"Chapters待转换汉字:\n{''.join(chap_extra_chars)}")
+        print(f"Chapters转换后汉字:\n{''.join(convert_extra_chars)}")
 
-        # 得出转换表
-        print(chars_map)
-        print(uni_map)
+        # # 建立转换表
+        # chars_map = {chap_char: convert_char for chap_char, convert_char in zip(chap_extra_chars, convert_extra_chars)}
+        # uni_map = {str(chap_uni): str(convert_uni) for chap_uni, convert_uni in zip(chap_extra_uni, convert_extra_uni)}
+
+        # # 替换字体文件夹
+        # for font_lib in font_libs:
+        #     for folder in os.listdir(font_lib):
+        #         if folder.startswith("glyph_"):
+        #             # 提取文件夹名称中的“unicode”部分
+        #             parts = folder.split('_', 2)
+        #             uni_part = parts[1]
+        #             other_part = parts[2] if len(parts) > 2 else ""
+        #             # 根据uni_map匹配
+        #             if uni_part in uni_map:
+        #                 # 使用该key对应的value，匹配库中每个文件夹的“unicode”部分
+        #                 value = uni_map[uni_part]
+        #                 for folder_to_check in os.listdir(font_lib):
+        #                     if folder_to_check.startswith("glyph_"):
+        #                         check_parts = folder_to_check.split('_', 2)
+        #                         check_uni_part = check_parts[1]
+        #                         if check_uni_part == value:
+        #                             # 删除value匹配到的文件夹
+        #                             delete_folder = os.path.join(font_lib, folder_to_check)
+        #                             shutil.rmtree(delete_folder)
+        #                             break
+        #                 # 复制key匹配到的文件夹（以及文件夹包含的所有内容）
+        #                 src_folder = os.path.join(font_lib, folder)
+        #                 dest_folder = os.path.join(font_lib, f"glyph_{value}_{other_part}")
+        #                 shutil.copytree(src_folder, dest_folder)
+
+        #                 print(f"已删除{delete_folder}")
+        #                 print(f"已复制为{dest_folder}")
