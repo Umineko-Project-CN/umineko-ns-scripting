@@ -11,13 +11,18 @@ chap_path = 'chapters.txt'
 output_path = 'catbox/replace_chars.txt'
 
 # 待改字体库
-# f_medium_lib = "/f_medium"
-# f_bold_lib = "/f_bold"
-# f_system_lib = "/f_system"
-# font_libs = [f_medium_lib, f_bold_lib, f_system_lib]
+f_medium_lib = "f_medium"
+f_bold_lib = "f_bold"
+f_system_lib = "f_system"
 
-# 不属于GB2312、Shift-JIS范围的汉字
+# 特殊标点转换
+other_map = {
+    "，": "ゞ",
+    ".": "〕",
+}
+# 不属于GB2312、Shift-JIS范围的字符
 add_set = ['呣', '呴', '咘', '咜', '哱', '唦', '唭', '啨', '啰', '喼', '嗙', '嗞', '嗰', '嘡', '瘆', '祂', '觍']
+
 
 # 读取文件
 def read_text(file_path):
@@ -29,7 +34,9 @@ def read_characters(file_paths):
     unique_chars = set()
     for path in file_paths:
         text = read_text(path)
-        unique_chars.update(text)
+        # 过滤掉换行符
+        filtered_text = text.replace('\n', '').replace('\r', '')
+        unique_chars.update(filtered_text)
     return sorted(list(unique_chars))
 
 # 过滤为汉字
@@ -39,6 +46,9 @@ def filter_chinese(char_list):
 
 # 生成GB2312、Shift-JIS、Big5、（GBK）字符集
 def chars_set():
+    # ASCII字符
+    ascii_chars = ''.join(chr(i) for i in range(32, 127))
+
     # 非中文字符
     nonchinese_chars = set()
     for code in range(0x0000, 0x10FFFF + 1):  # Unicode 全范围
@@ -110,12 +120,12 @@ def chars_set():
     replace_chars = sorted(list(gbk_chars - shiftjis_chars))
     # 所有字符集
     charset_list =  sorted(list(charset))
-    # Shift-JIS中存在，GB2312、Big5中不存在的字符
-    shiftjis_no_big5 = sorted(list(shiftjis_chars - gb2312_chars - big5_chars))
-    # Shift-JIS字符集
-    shiftjis = sorted(list(shiftjis_chars))
+    # Shift-JIS + ASCII中存在，GB2312、Big5中不存在的字符
+    charset_list2 = sorted(list(shiftjis_chars.union(ascii_chars) - gb2312_chars - big5_chars))
+    # Shift-JIS + ASCII 字符集
+    charset_list3 = sorted(list(shiftjis_chars.union(ascii_chars)))
 
-    return(replace_chars, charset_list, shiftjis_no_big5, shiftjis)
+    return(replace_chars, charset_list, charset_list2, charset_list3)
 
 # unicode转十进制
 def unicode_10(string_list):
@@ -124,8 +134,10 @@ def unicode_10(string_list):
         result.extend([ord(char) for char in string])
     return result
 
-mode = int(input("请选择模式 (0: 导出replace_chars , 1: 显示文本中多余汉字，2: 显示chapters汉字转换表)："))
-# 得到对应模式的字符集
+# 开始输入
+mode = int(input("请选择模式 (0: 导出replace_chars , 1: 显示文本中多余字符，2: chapters字符转换)："))
+if mode == 2:
+    f_lib_path = input("请输入3个字体库母文件夹路径（如不需要生成则直接回车）：")
 
 if mode == 0:
     text_set = chars_set()[mode]
@@ -141,19 +153,19 @@ elif mode in [1, 2]:
     file_paths.extend([os.path.join(cn_path, file) for file in os.listdir(cn_path) if file.endswith('.txt')])
     file_paths.extend([os.path.join(jp_path, file) for file in os.listdir(jp_path) if file.endswith('.txt')])
 
-    # 获取指定字符集中的汉字
-    text_set = filter_chinese(chars_set()[mode])
-    chap_text_set = filter_chinese(chars_set()[3])
+    # 获取指定字符集中的字符
+    text_set = chars_set()[mode]
+    chap_text_set = chars_set()[3]
 
-    # 读取指定文本中的汉字
-    text = filter_chinese(read_characters(file_paths))
-    chap_text = filter_chinese(read_characters([chap_path]))
+    # 读取指定文本中的字符
+    text = read_characters(file_paths)
+    chap_text = read_characters([chap_path])
 
     if mode == 1:
         extra_chars = sorted(set(text) - set(text_set))
         extra_uni = unicode_10(extra_chars)
-        # print超出范围的汉字
-        print(f"超出范围的汉字:\n{''.join(extra_chars)}")
+        # print超出范围的字符
+        print(f"超出范围的字符:\n{''.join(extra_chars)}")
         print(" ".join(map(str, extra_uni)))
         print(f"add_set = {extra_chars}" )
 
@@ -169,39 +181,45 @@ elif mode in [1, 2]:
         convert_extra_chars = extra_chars[-len(chap_extra_chars):]
         convert_extra_uni = extra_uni[-len(chap_extra_chars):]
 
-        # print要转换的汉字
-        print(f"Chapters待转换汉字:\n{''.join(chap_extra_chars)}")
-        print(f"Chapters转换后汉字:\n{''.join(convert_extra_chars)}")
+        # print要转换的字符
+        print(f"Chapters待转换字符:\n{''.join(chap_extra_chars)}")
+        print(f"Chapters转换后字符:\n{''.join(convert_extra_chars)}")
 
-        # # 建立转换表
-        # chars_map = {chap_char: convert_char for chap_char, convert_char in zip(chap_extra_chars, convert_extra_chars)}
-        # uni_map = {str(chap_uni): str(convert_uni) for chap_uni, convert_uni in zip(chap_extra_uni, convert_extra_uni)}
+        # 字体转换
+        if f_lib_path.strip():
+            # 建立转换表
+            chars_map = {chap_char: convert_char for chap_char, convert_char in zip(chap_extra_chars, convert_extra_chars)}
+            uni_map = {str(chap_uni): str(convert_uni) for chap_uni, convert_uni in zip(chap_extra_uni, convert_extra_uni)}
+            # 添加特殊标点转换
+            chars_map.update(other_map) 
+            uni_map.update({str(ord(k)): str(ord(v)) for k, v in other_map.items()})
+            # 替换字体文件夹
+            font_libs = [os.path.join(f_lib_path, f_medium_lib), os.path.join(f_lib_path, f_bold_lib), os.path.join(f_lib_path, f_system_lib)]
 
-        # # 替换字体文件夹
-        # for font_lib in font_libs:
-        #     for folder in os.listdir(font_lib):
-        #         if folder.startswith("glyph_"):
-        #             # 提取文件夹名称中的“unicode”部分
-        #             parts = folder.split('_', 2)
-        #             uni_part = parts[1]
-        #             other_part = parts[2] if len(parts) > 2 else ""
-        #             # 根据uni_map匹配
-        #             if uni_part in uni_map:
-        #                 # 使用该key对应的value，匹配库中每个文件夹的“unicode”部分
-        #                 value = uni_map[uni_part]
-        #                 for folder_to_check in os.listdir(font_lib):
-        #                     if folder_to_check.startswith("glyph_"):
-        #                         check_parts = folder_to_check.split('_', 2)
-        #                         check_uni_part = check_parts[1]
-        #                         if check_uni_part == value:
-        #                             # 删除value匹配到的文件夹
-        #                             delete_folder = os.path.join(font_lib, folder_to_check)
-        #                             shutil.rmtree(delete_folder)
-        #                             break
-        #                 # 复制key匹配到的文件夹（以及文件夹包含的所有内容）
-        #                 src_folder = os.path.join(font_lib, folder)
-        #                 dest_folder = os.path.join(font_lib, f"glyph_{value}_{other_part}")
-        #                 shutil.copytree(src_folder, dest_folder)
+            for font_lib in font_libs:
+                for folder in os.listdir(font_lib):
+                    if folder.startswith("glyph_"):
+                        # 提取文件夹名称中的“unicode”部分
+                        parts = folder.split('_', 2)
+                        uni_part = parts[1]
+                        other_part = parts[2] if len(parts) > 2 else ""
+                        # 根据uni_map匹配
+                        if uni_part in uni_map:
+                            # 使用该key对应的value，匹配库中每个文件夹的“unicode”部分
+                            value = uni_map[uni_part]
+                            for folder_to_check in os.listdir(font_lib):
+                                if folder_to_check.startswith("glyph_"):
+                                    check_parts = folder_to_check.split('_', 2)
+                                    check_uni_part = check_parts[1]
+                                    if check_uni_part == value:
+                                        # 删除value匹配到的文件夹
+                                        delete_folder = os.path.join(font_lib, folder_to_check)
+                                        shutil.rmtree(delete_folder)
+                                        break
+                            # 复制key匹配到的文件夹（以及文件夹包含的所有内容）
+                            src_folder = os.path.join(font_lib, folder)
+                            dest_folder = os.path.join(font_lib, f"glyph_{value}_{other_part}")
+                            shutil.copytree(src_folder, dest_folder)
 
-        #                 print(f"已删除{delete_folder}")
-        #                 print(f"已复制为{dest_folder}")
+                            print(f"已将{src_folder}，")
+                            print(f"复制为{dest_folder}。")
