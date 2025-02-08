@@ -3,12 +3,15 @@ import re
 import copy
 
 # # # # # # # # # # # # # # #
-# 定义
+# 1. 定义
 # # # # # # # # # # # # # # #
 
 # 路径
 jp_script_base = 'story_ns/'
 cn_script_base = 'story_cn/'
+
+# 1.1. 文本修改部分定义
+
 # EP列表
 ep_list = [
     *(("umi" + str(i), list(range(0, 31))) for i in range(1, 9)),
@@ -111,17 +114,20 @@ name_map = {
     'ベルンカステル': '贝伦卡斯泰露'
 }
 
-# # # # # # #
-# 主处理
-# # # # # # #
+# 1.2. 代码修改部分定义
 
-def main(target_script, chapter_lines, tips_lines, characters_lines):
+# # # # # # # # # # # # # # #
+# 2. 函数
+# # # # # # # # # # # # # # #
+
+# 2.1 读取文本
+def parse(file_path):
+    with open(file_path, 'r', encoding='utf-8') as rf:
+        return [line.strip() for line in rf.readlines()]
     
-    # # # # # # # # # # # # # # #
-    # 正文部分
-    # # # # # # # # # # # # # # #
-
-    # 输出的初始部分
+# 2.2 替换文本
+def main(target_script, chapter_lines, tips_lines, characters_lines):
+    # 2.2.1 替换正文
     output = '\n'.join(target_script[:start_line]) + '\n'
     target_script = target_script[start_line:]
 
@@ -179,12 +185,7 @@ def main(target_script, chapter_lines, tips_lines, characters_lines):
             output += chapter_script + '\n'
             target_script = target_script[line_idx:]
 
-
-    # # # # # # # # # # # # # # #
-    # 章节标题、Tips、Characters部分
-    # # # # # # # # # # # # # # #
-
-    # 修改章节标题、Tips和Characters
+    # 2.2.2 替换章节标题、Tips和Characters
     output = re.sub('\'うみねこのなく頃に','\'海猫鸣泣之时',output)
 
     # 解析Tips和Characters
@@ -236,27 +237,29 @@ def main(target_script, chapter_lines, tips_lines, characters_lines):
             updated_lines.append(line + '\n')
     output = ''.join(updated_lines)
 
-    # 修改人名
+    # 2.2.3 替换人名
     for name_jp, name_cn in name_map.items():
         output = re.sub(rf"'{re.escape(name_jp)}\s?", f"'{name_cn}", output)
 
     return output, target_script
 
-# # # # # # #
-# 读取与保存
-# # # # # # #
+# 2.3 增加代码
+
+# # # # # # # # # # # # # # #
+# 3. 读取与保存
+# # # # # # # # # # # # # # #
 
 # 读取并处理rb文件
-with open('main.rb', 'r', encoding='utf-8') as f:
-    target_script = f.read().splitlines()
-with open('chapters.txt', 'r', encoding='utf-8') as rf:
-    chapter_lines = [line.strip() for line in rf.readlines()]
-with open('tips.txt', 'r', encoding='utf-8') as rf:
-    tips_lines = [line.strip() for line in rf.readlines()]
-with open('characters.txt', 'r', encoding='utf-8') as rf:
-    characters_lines = [line.strip() for line in rf.readlines()]
+target_script = parse('main.rb')
+chapter_lines = parse('chapters.txt')
+tips_lines = parse('tips.txt')
+characters_lines = parse('characters.txt')
+
 output, trans_target_script = main(target_script, chapter_lines, tips_lines, characters_lines)
 
-# 将处理后的内容写回.rb文件
+# 将处理后的内容合并
+script_lines = (output + '\n' + '\n'.join(trans_target_script)).splitlines()
+
+# 将修改后的内容写回script.rb文件
 with open('catbox\script.rb', 'w', encoding='utf-8') as f:
-    f.write(output + '\n' + '\n'.join(trans_target_script))
+    f.writelines('\n'.join(script_lines))
