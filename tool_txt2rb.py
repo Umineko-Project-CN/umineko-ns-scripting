@@ -302,7 +302,7 @@ output, trans_target_script = main_text(target_script, chapter_lines, tips_lines
 script_lines = (output + '\n' + '\n'.join(trans_target_script)).splitlines()
 
 # 3.3 增加代码
-script_lines = main_code(script_lines)
+# script_lines = main_code(script_lines)
 
 # 3.4 将修改后的内容写回script.rb文件
 with open('catbox\script.rb', 'w', encoding='utf-8') as f:
