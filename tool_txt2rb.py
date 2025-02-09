@@ -6,12 +6,11 @@ import copy
 # 1. 定义
 # # # # # # # # # # # # # # #
 
-# 路径
+# 1.0. 路径定义
 jp_script_base = 'story_ns/'
 cn_script_base = 'story_cn/'
 
 # 1.1. 文本修改部分定义
-
 # EP列表
 ep_list = [
     *(("umi" + str(i), list(range(0, 31))) for i in range(1, 9)),
@@ -115,6 +114,34 @@ name_map = {
 }
 
 # 1.2. 代码修改部分定义
+# 新图片
+insert_bgs = [
+    "end_all00_01 = snr.bg 'end_all00_01', 65535",
+    "end_all00_02 = snr.bg 'end_all00_02', 65535"
+]
+target_bgs = 'snr.write_bgs'
+
+# 图片调用：end_all00
+target_lines_endall00 = [
+    "s.ins 0xcb",
+    "s.ins 0xc1, 3, byte(2), 0, byte(1), 2402",
+    "s.ins 0xc3, 3, 5, byte(1), -3",
+]
+insert_lines_endall00 = [
+    "s.ins 0xc1, 19, byte(1), 0, byte(0), end_all00_01",
+    "s.ins 0xc3, 19, 6, byte(1), 0", # 初始透明
+    "s.ins 0xc3, 19, 6, byte(1), 255, 30", # 淡入
+    "s.ins 0x83, byte(0), 60", # 等待
+    "s.ins 0xc3, 19, 6, byte(1), 0, 30", # 淡出
+    "s.ins 0xc2, 19, byte(0) ", # 隐藏
+
+    "s.ins 0xc1, 19, byte(1), 0, byte(0), end_all00_02",
+    "s.ins 0xc3, 19, 6, byte(1), 0", # 初始透明
+    "s.ins 0xc3, 19, 6, byte(1), 255, 30", # 淡入
+    "s.ins 0x83, byte(0), 60", # 等待
+    "s.ins 0xc3, 19, 6, byte(1), 0, 30", # 淡出
+    "s.ins 0xc2, 19, byte(0) ", # 隐藏
+]
 
 # # # # # # # # # # # # # # #
 # 2. 函数
@@ -126,7 +153,7 @@ def parse(file_path):
         return [line.strip() for line in rf.readlines()]
     
 # 2.2 替换文本
-def main(target_script, chapter_lines, tips_lines, characters_lines):
+def main_text(target_script, chapter_lines, tips_lines, characters_lines):
     # 2.2.1 替换正文
     output = '\n'.join(target_script[:start_line]) + '\n'
     target_script = target_script[start_line:]
@@ -244,22 +271,39 @@ def main(target_script, chapter_lines, tips_lines, characters_lines):
     return output, target_script
 
 # 2.3 增加代码
+def main_code(script_lines):
+    # 新图片
+    for i, line in enumerate(script_lines):
+        if target_bgs in line:
+            script_lines[i:i] = insert_bgs
+            break
+
+    # 图片调用：end_all00
+    for i in range(len(script_lines) - len(target_lines_endall00) + 1):
+        if script_lines[i:i + len(target_lines_endall00)] == target_lines_endall00:
+            # 把新内容增加到这一行之后
+            script_lines[i + len(target_lines_endall00):i + len(target_lines_endall00)] = insert_lines_endall00
+            break
+
+    return script_lines
 
 # # # # # # # # # # # # # # #
 # 3. 读取与保存
 # # # # # # # # # # # # # # #
 
-# 读取并处理rb文件
+# 3.1 读取
 target_script = parse('main.rb')
 chapter_lines = parse('chapters.txt')
 tips_lines = parse('tips.txt')
 characters_lines = parse('characters.txt')
 
-output, trans_target_script = main(target_script, chapter_lines, tips_lines, characters_lines)
-
-# 将处理后的内容合并
+# 3.2 替换文本
+output, trans_target_script = main_text(target_script, chapter_lines, tips_lines, characters_lines)
 script_lines = (output + '\n' + '\n'.join(trans_target_script)).splitlines()
 
-# 将修改后的内容写回script.rb文件
+# 3.3 增加代码
+script_lines = main_code(script_lines)
+
+# 3.4 将修改后的内容写回script.rb文件
 with open('catbox\script.rb', 'w', encoding='utf-8') as f:
     f.writelines('\n'.join(script_lines))
