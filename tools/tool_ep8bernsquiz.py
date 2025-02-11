@@ -30,20 +30,19 @@ jp_pattern = [
     '「犯人はやはり、マスターキーを持っているのかもしれません…」'
 ]
 translate_pallate = {
-    'クイズ': '谜题',
-    '蔵臼': '藏臼',
-    '夏妃': '夏妃',
-    '朱志香': '朱志香',
-    '南條': '南条',
-    '譲治': '让治',
-    '戦人': '战人',
-    '真里亞': '真里亚',
-    '紗音': '纱音',
-    '嘉音': '嘉音',
-    '郷田': '乡田',
-    '熊沢': '熊泽',
-    '第五・六': '第五·第六',
-    'の晩': '晚'
+    '蔵臼': ('藏臼', '藏臼'),
+    '夏妃': ('夏妃', '夏妃'),
+    '朱志香': ('朱志香', '朱志香'),
+    '南條': ('南条', '南條'),
+    '譲治': ('让治', '讓治'),
+    '戦人': ('战人', '戰人'),
+    '真里亞': ('真里亚', '真里亞'),
+    '紗音': ('纱音', '紗音'),
+    '嘉音': ('嘉音', '嘉音'),
+    '郷田': ('乡田', '鄉田'),
+    '熊沢': ('熊泽', '熊澤'),
+    '第五・六': ('第五·第六', '第五·第六'),
+    'の晩': ('晚', '晚')
 }
 exefs_convert_pallate = {
     '.@c999.': '@c999.',
@@ -54,19 +53,27 @@ exefs_convert_pallate = {
     '食堂内何者かが隠れているということもなかったよ': '食堂内に何者かが隠れているということもなかったよ',
 }
 offsets = [
-    ('0x15bd60', '0x16048c'),
-    ('0x16048c', '0x162c2a'),
+    ('0x15bd60', '0x15d6cb'),
+    ('0x15d6cb', '0x162c2a'),
     # ('0x15C1DB', '0x15F2F8')
 ]
 
 # 正则表达式匹配内容
-quote_pattern = r'[“「].*?[”」]'
-red_code_pattern = r'\{p:1:.*?\}'
 quote_line_pattern = r'^「.*」$'
 BRACKET_replaces = {
-    r"\{p:1:(.*?)\}": lambda m: rf"{m.group(1)}",  # 红字
     r"\{p:42+:(.*?)\}": lambda m: rf"@c649.{m.group(1)}@c999.",  # 紫字
+    r"\{p:1:(.*?)\}": lambda m: rf"{m.group(1)}",  # 红字
 }
+BRACKET_rev_replaces = {
+    r"@c649\.": r"{p:42:",
+    r"@c999\.": r"}",
+    r"@z[0-9]+\.": r"",
+    r"@r": r"{n}",
+    r"\{n\}\{n\}(?!■)": r"{n}"
+}
+BRACKET_rev_red = {r"(.*)": lambda m: rf"{{p:1:{m.group(1)}}}"}  # 红字
+menu_night_pattern = r'stralias ep8_9_page_(.*)_t,":s;#FFFFFF`\{p:3:(.*)\}"'
+menu_chara_pattern = r'stralias chars_bernquiz_(.*),":s;#FFFFFF`\{p:3:(.*)\}"'
 
 # 读取文件并去除每行左右的`
 def read_file(file_path):
@@ -179,10 +186,10 @@ def process_texts(jp_texts, jp_convert_texts, cn_convert_texts, cht_convert_text
     return cn_texts, cht_texts
 
 # 使用translate_pallate匹配并替换文本内容
-def translate_texts(texts, translate_pallate):
+def translate_texts(texts, translate_pallate, lang):
     for key, value in translate_pallate.items():
         # 替换文本中的特定字符
-        texts = [text.replace(key, value) for text in texts]
+        texts = [text.replace(key, value[lang]) for text in texts]
     return texts
 
 # 把cn_night_texts和cn_chara_texts写回exefs_texts中相应行的第二部分信息
@@ -229,9 +236,40 @@ if __name__ == "__main__":
 
     # 2.5 使用translate_pallate匹配并替换cn_night_texts和cn_chara_texts的内容
     for category in ['night', 'chara']:
-        cn_texts[category] = translate_texts(cn_texts[category], translate_pallate)
+        cn_texts[category] = translate_texts(cn_texts[category], translate_pallate, 0)
+        cht_texts[category] = translate_texts(cht_texts[category], translate_pallate, 1)
 
-    # 2.6 更新menu.txt中的内容
+    # 2.6 使用cn/cht_night/chara_texts的内容，更新menu.txt中的内容
+    def update_menu_texts(menu_file, menu_texts):
+        # 1. 对(语言)_texts的每一项进行判断
+        for category in ['night', 'chara']:
+            for i, text in enumerate(menu_texts[category]):        
+                # 1.1 使用BRACKET_rev_replaces进行匹配替换
+                for pattern, repl in BRACKET_rev_replaces.items():
+                    menu_texts[category][i] = re.sub(pattern, repl, menu_texts[category][i])
+
+        # 2. 打开各自语言的(语言)_menu_file
+        with open(menu_file, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+
+        # 2.1 使用menu_night_pattern匹配行并替换
+        for i, line in enumerate(lines):
+            if re.search(menu_night_pattern, line):
+                lines[i] = re.sub(menu_night_pattern, lambda m: f'stralias ep8_9_page_{m.group(1)}_t,":s;#FFFFFF`{{p:3:{menu_texts["night"].pop(0)}}}"', line)
+
+        # 2.2 使用menu_chara_pattern匹配行并替换
+        for i, line in enumerate(lines):
+            if re.search(menu_chara_pattern, line):
+
+                lines[i] = re.sub(menu_chara_pattern, lambda m: f'stralias chars_bernquiz_{m.group(1)},":s;#FFFFFF`{{p:3:{menu_texts["chara"].pop(0)}}}"', line)
+
+        # 3. 保存修改后的该语言版本的menu.txt
+        with open(menu_file, 'w', encoding='utf-8') as file:
+            file.writelines(lines)
+
+    # 更新cn和cht语言的menu.txt
+    update_menu_texts(cn_menu_file, cn_texts)
+    update_menu_texts(cht_menu_file, cht_texts)
 
     # 2.7 更新exefs_lines中的内容
     exefs_lines = update_exefs_texts(exefs_lines, [cn_texts['night'], cn_texts['chara']], offsets)
