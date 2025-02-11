@@ -1,5 +1,9 @@
 import os
 import re
+import sys
+
+# 解决路径问题
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # 路径
 root_dir = os.path.dirname(os.path.abspath(__file__))

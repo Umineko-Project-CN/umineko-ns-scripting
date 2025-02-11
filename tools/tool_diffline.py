@@ -1,4 +1,8 @@
 import os
+import sys
+
+# 解决路径问题
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 def get_txt_files_with_lines(folder):
     txt_files_lines = {}

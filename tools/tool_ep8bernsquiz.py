@@ -1,4 +1,9 @@
+import os
 import re
+import sys
+
+# 解决路径问题
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # 文件路径定义
 languages = ['jp', 'cn', 'cht']

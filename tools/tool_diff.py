@@ -1,5 +1,9 @@
 import os
 import difflib
+import sys
+
+# 解决路径问题
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 folder_a = 'story_ns'
 folder_b = 'story_umipro'

@@ -3,6 +3,10 @@ import re
 import shutil
 import unicodedata
 from itertools import chain
+import sys
+
+# 解决路径问题
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # 指定路径
 cn_path = 'story_cn'
