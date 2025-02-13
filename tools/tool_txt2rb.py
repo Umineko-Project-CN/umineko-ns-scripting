@@ -198,7 +198,7 @@ def main_text(target_script, chapter_lines, tips_lines, characters_lines):
                     for fun in [lambda x: x + '@', lambda x: x + "'", lambda x: x.strip() + '@', lambda x: x.strip() + "'"]:
                         match = fun(lines_jp[i])
                         match_nc = fun(lines_jp_nc[i]) if ep == "tsubasa" and chapter == 1 else None # 翼1特殊处理
-                        pos = chapter_script.find(match)
+                        pos = chapter_script.find(match) if match else -1
                         pos_nc = chapter_script.find(match_nc) if match_nc else -1 # 翼1特殊处理
 
                         if pos != -1:
