@@ -186,6 +186,8 @@ def main_text(target_script, chapter_lines, tips_lines, characters_lines):
             chapter_script = chapter_script[:line_idx]
             chapter_script = '\n'.join(chapter_script)
 
+            replaced_pos = 0
+
             # 遍历日文txt的每一行
             for i in range(len(lines_jp)):
                 if i < len(lines_cn) and lines_cn[i]:
@@ -195,22 +197,27 @@ def main_text(target_script, chapter_lines, tips_lines, characters_lines):
                     # 保存所有匹配方式的结果及其位置
                     matches = []
 
-                    for fun in [lambda x: x + '@', lambda x: x + "'", lambda x: x.strip() + '@', lambda x: x.strip() + "'"]:
+                    for fun in [lambda x: x + '@', lambda x: x + "'"]:
                         match = fun(lines_jp[i])
                         match_nc = fun(lines_jp_nc[i]) if ep == "tsubasa" and chapter == 1 else None # 翼1特殊处理
-                        pos = chapter_script.find(match) if match else -1
-                        pos_nc = chapter_script.find(match_nc) if match_nc else -1 # 翼1特殊处理
+                        pos = chapter_script.find(match, replaced_pos) if match else -1
+                        pos_nc = chapter_script.find(match_nc, replaced_pos) if match_nc else -1 # 翼1特殊处理
 
-                        if pos != -1:
+                        if pos >= replaced_pos:
                             matches.append((pos, match, fun(lines_cn[i])))
-                        elif pos_nc != -1:
+                        elif pos_nc >= replaced_pos:
                             matches.append((pos_nc, match_nc, fun(lines_cn[i]))) # 翼1特殊处理
 
                     # 替换最早出现的匹配项
                     if matches:
                         matches.sort()  # 按匹配项在脚本中的位置排序
                         match0 = matches[0]
-                        chapter_script = chapter_script.replace(match0[1], match0[2], 1)
+                        replace_pos = chapter_script.find(match0[1], replaced_pos)
+                        chapter_script = chapter_script[:replace_pos] + match0[2] + chapter_script[replace_pos + len(match0[1]):]
+                        replaced_pos = replace_pos + len(match0[2])
+                        if ep == "umi5" and chapter == 17:
+                            print(match0)
+
             # 删多余空格
             chapter_script = re.sub(SPACE_pattern, lambda m: SPACE_replace.format(text=m.group(1)), chapter_script)
             output += chapter_script + '\n'
