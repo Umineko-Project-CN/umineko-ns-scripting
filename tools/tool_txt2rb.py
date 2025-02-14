@@ -215,8 +215,6 @@ def main_text(target_script, chapter_lines, tips_lines, characters_lines):
                         replace_pos = chapter_script.find(match0[1], replaced_pos)
                         chapter_script = chapter_script[:replace_pos] + match0[2] + chapter_script[replace_pos + len(match0[1]):]
                         replaced_pos = replace_pos + len(match0[2])
-                        if ep == "umi5" and chapter == 17:
-                            print(match0)
 
             # 删多余空格
             chapter_script = re.sub(SPACE_pattern, lambda m: SPACE_replace.format(text=m.group(1)), chapter_script)
