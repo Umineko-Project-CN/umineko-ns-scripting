@@ -26,8 +26,15 @@ ep_list = [
 # 开始行
 start_line = 18467
 # 空格替换
-SPACE_pattern = r"((@[a-z|\[\]](\.)?)*)@"
+SPACE_pattern = r"((@[A-Za-z|\[\]](\.)?)*)@"
 SPACE_replace = r"{text}@"
+# 英文数字防断行
+RUBY_pattern = r"(@b.*?@<.*?@>)"
+ALPHANUM_replaces = {
+    r"([A-Za-zè0-9+\-×÷=%,.?!'&]{2,})": r"@b.@<{text}@>",
+    r"@@b\.@<([cr](?:[0-9]+)?.?)@>": r"@{text}",
+    r"@@b\.@<r(.*?)@>": r"@r@b.@<{text}@>",
+}
 # 匹配章节标题、Tips、Characters
 CHAPTER_pattern = r'(s\.ins 0xa0, byte\(1\), )(.*)'
 TIP_pattern = r"^(snr\.tip\s+([0-6]),\s+([0-9]|1[0-9]|2[0-6]),\s*)'([^']*)',\s*'([^']*)'(.*)$"
@@ -156,6 +163,18 @@ def parse(file_path):
     with open(file_path, 'r', encoding='utf-8') as rf:
         return [line.strip() for line in rf.readlines()]
     
+def replace_alphanum(text):
+    # 分割文本为Ruby部分和非Ruby部分
+    parts = re.split(RUBY_pattern, text)
+    # 遍历每个部分，处理非Ruby部分
+    for i, part in enumerate(parts):
+        if not part.startswith("@b"):
+            for pattern, replace in ALPHANUM_replaces.items():
+                parts[i] = re.sub(pattern, lambda m: replace.format(text=m.group(1)), parts[i])
+    # 合并所有部分
+    text = ''.join(parts)
+    return(text)
+
 # 2.2 替换文本
 def main_text(target_script, chapter_lines, tips_lines, characters_lines):
     # 2.2.1 替换正文
@@ -192,7 +211,7 @@ def main_text(target_script, chapter_lines, tips_lines, characters_lines):
             for i in range(len(lines_jp)):
                 if i < len(lines_cn) and lines_cn[i]:
                     lines_jp[i] = lines_jp[i].translate(trans_table_jp)
-                    lines_cn[i] = lines_cn[i].translate(trans_table_cn)
+                    lines_cn[i] = replace_alphanum(lines_cn[i]).translate(trans_table_cn)
 
                     # 保存所有匹配方式的结果及其位置
                     matches = []
@@ -257,17 +276,19 @@ def main_text(target_script, chapter_lines, tips_lines, characters_lines):
         elif match_tip and tip_i < len(tips_pairs) :
             prefix = match_tip.group(1)
             suffix = match_tip.group(6)
-            new1, new2 = tips_pairs[tip_i]
+            tips_title, tips_text = tips_pairs[tip_i]
+            tips_text = replace_alphanum(tips_text)
             tip_i += 1
-            new_line = f"{prefix}'{new1}', '{new2}'{suffix}\n"
+            new_line = f"{prefix}'{tips_title}', '{tips_text}'{suffix}\n"
             updated_lines.append(new_line)
         # 替换Characters
         elif match_char and character_i < len(characters_pairs):
             prefix = match_char.group(1)
             suffix = match_char.group(4)
-            new1, new2 = characters_pairs[character_i]
+            char_title, char_text = characters_pairs[character_i]
+            char_text = replace_alphanum(char_text)
             character_i += 1
-            new_line = f"{prefix}'{new1}', '{new2}'{suffix}\n"
+            new_line = f"{prefix}'{char_title}', '{char_text}'{suffix}\n"
             updated_lines.append(new_line)
         else:
             updated_lines.append(line + '\n')
