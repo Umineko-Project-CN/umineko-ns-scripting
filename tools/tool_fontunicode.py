@@ -118,11 +118,16 @@ def chars_set():
             except UnicodeDecodeError:
                 continue
 
-    charset = gb2312_chars.union(shiftjis_chars).union(nonchinese_chars)
+    # 上标字符范围：
+    superscript_chars = set()
+    for code in [0x00B2, 0x00B3, 0x00B9, 0x2070] + list(range(0x2074, 0x2079 + 1)):
+        char = chr(code)
+        superscript_chars.add(char)
 
     # GBK中存在，Shift-JIS中不存在的字符
-    replace_chars = sorted(list(gbk_chars - shiftjis_chars))
+    replace_chars = sorted(list(gbk_chars.union(superscript_chars) - shiftjis_chars))
     # 所有字符集
+    charset = gb2312_chars.union(shiftjis_chars).union(nonchinese_chars)
     charset_list =  sorted(list(charset))
     # Shift-JIS + ASCII中存在，GB2312、Big5中不存在的字符
     charset_list2 = sorted(list(shiftjis_chars.union(ascii_chars) - gb2312_chars - big5_chars))
