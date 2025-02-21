@@ -214,6 +214,8 @@ elif mode in [1, 2]:
             # 添加特殊标点转换
             chars_map.update(other_map) 
             uni_map.update({str(ord(k)): str(ord(v)) for k, v in other_map.items()})
+            # 替换字体文件夹
+            font_libs = [os.path.join(f_lib_path, f_medium_lib), os.path.join(f_lib_path, f_bold_lib), os.path.join(f_lib_path, f_system_lib)]
             for font_lib in font_libs:
                 for folder in os.listdir(font_lib):
                     if folder.startswith("glyph_"):
