@@ -32,10 +32,11 @@ SPACE_replace = r"{text}@"
 RUBY_pattern = r"(@b.*?@<.*?@>)"
 ALPHANUM_replaces = {
     r"([A-Za-zè0-9+\-×÷=%,.?!'&]{2,})": r"@b.@<{text}@>",
-    r"@@b\.@<([cr](?:[0-9]+)?.?)@>": r"@{text}",
+    r"@@b\.@<([crz](?:[0-9]+)?.?)@>": r"@{text}",
     r"@@b\.@<r(.*?)@>": r"@r@b.@<{text}@>",
 }
-# 匹配章节标题、Tips、Characters
+# 匹配文本行、章节标题、Tips、Characters
+TEXTLINE_pattern = r's.ins 0xa0, byte(1), '
 CHAPTER_pattern = r'(s\.ins 0xa0, byte\(1\), )(.*)'
 TIP_pattern = r"^(snr\.tip\s+([0-6]),\s+([0-9]|1[0-9]|2[0-6]),\s*)'([^']*)',\s*'([^']*)'(.*)$"
 CHAR_pattern = r"^(segments\s*<<\s*\[\d+,\s*)'([^']*)',\s*'([^']*)'\s*(.*)$"
@@ -48,6 +49,18 @@ trans_table_cn = str.maketrans(HALFWIDTH_REPLACE[1:], HALFWIDTH[1:])
 CHAPTER_hans = "è东两为义乡书亚亲仪们伙伞传伦侦关则剧动劳厅另唤围圣场备复实宫宾对尔岁岛崭师帕带开忆恶戏战户择时朵杀杂检樱橱步每滩炼烦爱狱猎现电盘种笼类紧红终结绘缘节苏获萨蓝观规议记访证诞语误说请谁谈谜谢贝贵赛轩轻辑达还这迟选逻释钥锅错门问队难项预题风馆验骗黑"
 CHAPTER_hans_REPLACE = "轜辧辷迚迯逎逓逧逹遖邉邨醗釖釛釟釡釶釼鈎鈩鈬銹鋲錺錻鍄鎭鎹鏥鐚鐡鑁鑓鑚鑛閇閊閖閙閠閧陦隲靤靫靱靹鞆鞐韈韮韲頚頴頽顋颪飃飜飮餝餠饂馼駈駲騨髞髢髴鬪鮃鮖鮗鮟鮴鯏鯑鯒鯣鯱鯲鯵鰄鰊鰌鰐鰕鰛鰮鰯鰰鰺鱇鱚鱶鳫鳬鳰鴎鴪鴫鴬鵄鵆鵈鵐鵞鵤鵺鶫鷄鷆麁麕麪麹麿鼈鼡龝"
 trans_table_chapter = str.maketrans(CHAPTER_hans, CHAPTER_hans_REPLACE)
+# 注释替换
+grim_pos_pattern = r"（.*?详见魔导书.*?条目）" # 匹配魔导书位置
+grim_snum_sequence = "¹²³⁴⁵⁶⁷⁸⁹" # 序列数字
+grim_title_replaces = {
+    "(.*)@>$": "{capture}{snum}@>", # 已有ruby时
+    "(.*)(.$)": "{capture_pre}@b.@<{capture_sub}{snum}@>" # 没有ruby时
+}
+grim_explain_pattern = "@[@z70.@r@r{grim_contents}.*?@]" # 文本后条目注释框架
+grim_content_pattern ="{space}{num}. {explain}" # 文本后条目注释（space由括号决定）
+
+# 待用
+# '右代宫　留弗夫@r@v08/11200024.｢让治是真的了不起啊｡@k@v08/11200025.下次ゞ就让他给我们家的笨孩子分点指甲@b.@<垢¹@>吧｡｣@[@z70.@r@r　1. 出自日本谚语“把指甲垢煎了喝掉”。意为效仿优秀者。@]'
 
 # 选项、人名替换
 name_map_chap = {
@@ -129,9 +142,6 @@ name_map = {
     'ベルンカステル': '贝伦卡斯泰露'
 }
 
-# 待用
-# '右代宫　留弗夫@r@v08/11200024.｢让治是真的了不起啊｡@k@v08/11200025.下次ゞ就让他给我们家的笨孩子分点指甲@b.@<垢¹@>吧｡｣@[@z70.@r@r　1. 出自日本谚语“把指甲垢煎了喝掉”。意为效仿优秀者。@]'
-
 # 1.2. 代码修改部分定义
 # 新图片
 insert_bgs = [
@@ -168,8 +178,15 @@ insert_lines_endall00 = [
 
 # 2.1 读取文本
 def parse(file_path):
-    with open(file_path, 'r', encoding='utf-8') as rf:
-        return [line.strip() for line in rf.readlines()]
+    # 如果是.txt或.rb文件：
+    if file_path.endswith('.txt') or file_path.endswith('.rb'):
+        with open(file_path, 'r', encoding='utf-8') as rf:
+            return [line.strip() for line in rf.readlines()]
+    # 如果是.json文件：
+    elif file_path.endswith('.json'):
+        import json
+        with open(file_path, 'r', encoding='utf-8') as rf:
+            return json.load(rf)
     
 def replace_alphanum(text):
     # 分割文本为Ruby部分和非Ruby部分
@@ -184,7 +201,7 @@ def replace_alphanum(text):
     return(text)
 
 # 2.2 替换文本
-def main_text(target_script, chapter_lines, tips_lines, characters_lines):
+def main_text(target_script, grimoire_json, chapter_lines, tips_lines, characters_lines):
     # 2.2.1 替换正文
     output = '\n'.join(target_script[:start_line]) + '\n'
     target_script = target_script[start_line:]
@@ -209,7 +226,7 @@ def main_text(target_script, chapter_lines, tips_lines, characters_lines):
 
             # 在 target_script 中查找章节的开始
             chapter_script = target_script[:]
-            line_idx = next((i for i, x in enumerate(chapter_script) if x.startswith('s.ins 0xa0, byte(1), ')), len(chapter_script)) + 1
+            line_idx = next((i for i, x in enumerate(chapter_script) if x.startswith(TEXTLINE_pattern)), len(chapter_script)) + 1
             chapter_script = chapter_script[:line_idx]
             chapter_script = '\n'.join(chapter_script)
 
@@ -247,8 +264,10 @@ def main_text(target_script, chapter_lines, tips_lines, characters_lines):
             chapter_script = re.sub(SPACE_pattern, lambda m: SPACE_replace.format(text=m.group(1)), chapter_script)
             output += chapter_script + '\n'
             target_script = target_script[line_idx:]
+    
+    # 2.2.2 替换注释
 
-    # 2.2.2 替换章节标题、Tips和Characters
+    # 2.2.3 替换章节标题、Tips和Characters
     output = re.sub('\'うみねこのなく頃に','\'海猫鸣泣之时',output)
 
     # 解析Tips和Characters
@@ -302,7 +321,7 @@ def main_text(target_script, chapter_lines, tips_lines, characters_lines):
             updated_lines.append(line + '\n')
     output = ''.join(updated_lines)
 
-    # 2.2.3 替换选项与人名
+    # 2.2.4 替换选项与人名
     for name_jp, name_cn in name_map.items():
         if name_jp in name_map_chap:
             output = re.sub(rf"'{re.escape(name_jp)}\s?", f"'{name_cn.translate(trans_table_chapter)}", output)
@@ -334,12 +353,13 @@ def main_code(script_lines):
 
 # 3.1 读取
 target_script = parse('main.rb')
+grimoire_json = parse('grimoire.json')
 chapter_lines = parse('chapters.txt')
 tips_lines = parse('tips.txt')
 characters_lines = parse('characters.txt')
 
 # 3.2 替换文本
-output, trans_target_script = main_text(target_script, chapter_lines, tips_lines, characters_lines)
+output, trans_target_script = main_text(target_script, grimoire_json, chapter_lines, tips_lines, characters_lines)
 script_lines = (output + '\n' + '\n'.join(trans_target_script)).splitlines()
 
 # 3.3 增加代码
