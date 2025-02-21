@@ -19,6 +19,9 @@ f_medium_lib = "f_medium"
 f_bold_lib = "f_bold"
 f_system_lib = "f_system"
 
+# Chapters额外字段
+chap_ex = ["选项", "汝是否要将猫杀死"]
+
 # 特殊标点转换
 other_map = {
     "，": "ゞ",
@@ -34,13 +37,19 @@ def read_text(file_path):
         return file.read()
 
 # 读取字符
-def read_characters(file_paths):
+def read_characters(input_data):
     unique_chars = set()
-    for path in file_paths:
-        text = read_text(path)
-        # 过滤掉换行符
-        filtered_text = text.replace('\n', '').replace('\r', '')
-        unique_chars.update(filtered_text)
+    if isinstance(input_data, list):
+        for item in input_data:
+            if os.path.isfile(item):  # 如果是文件路径
+                text = read_text(item)
+                # 过滤掉换行符
+                filtered_text = text.replace('\n', '').replace('\r', '')
+                unique_chars.update(filtered_text)
+            else:  # 如果是文本
+                unique_chars.update(item)
+    elif isinstance(input_data, str):  # 如果是单个文本
+        unique_chars.update(input_data)
     return sorted(list(unique_chars))
 
 # 过滤为汉字
@@ -143,6 +152,7 @@ def unicode_10(string_list):
         result.extend([ord(char) for char in string])
     return result
 
+
 # 开始输入
 mode = int(input("请选择模式 (0: 导出replace_chars , 1: 显示文本中多余字符，2: chapters字符转换)："))
 if mode == 2:
@@ -169,6 +179,8 @@ elif mode in [1, 2]:
     # 读取指定文本中的字符
     text = read_characters(file_paths)
     chap_text = read_characters([chap_path])
+    chap_text.extend(read_characters(chap_ex))
+    print(chap_text)
 
     if mode == 1:
         extra_chars = sorted(set(text) - set(text_set))
@@ -202,9 +214,6 @@ elif mode in [1, 2]:
             # 添加特殊标点转换
             chars_map.update(other_map) 
             uni_map.update({str(ord(k)): str(ord(v)) for k, v in other_map.items()})
-            # 替换字体文件夹
-            font_libs = [os.path.join(f_lib_path, f_medium_lib), os.path.join(f_lib_path, f_bold_lib), os.path.join(f_lib_path, f_system_lib)]
-
             for font_lib in font_libs:
                 for folder in os.listdir(font_lib):
                     if folder.startswith("glyph_"):
