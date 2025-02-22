@@ -304,6 +304,7 @@ def main_text(target_script, grimoire_json, chapter_lines, tips_lines, character
                     num = str(i + 1) # 根据i确定序号
                     grim_content = grim_content_pattern.format(space=space, num=num, explain=explain)
                     grim_contents += grim_content + '@r'
+            grim_contents = grim_contents.rstrip('@r')
             if explain != "":
                 lines[idx] = lines[idx][:-1] + grim_explain_pattern.format(grim_contents=grim_contents) + "'"
                 
