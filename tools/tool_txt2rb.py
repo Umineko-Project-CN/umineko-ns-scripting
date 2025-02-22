@@ -201,68 +201,70 @@ def replace_alphanum(text):
 # 2.2 替换文本
 def main_text(target_script, grimoire_json, chapter_lines, tips_lines, characters_lines):
     # 2.2.1 替换正文
-    output = '\n'.join(target_script[:start_line]) + '\n'
-    target_script = target_script[start_line:]
+    def replace_main_text(target_script):
+        output = '\n'.join(target_script[:start_line]) + '\n'
+        target_script = target_script[start_line:]
 
-    # 处理每个EP和章节
-    for ep, chapters in ep_list:
-        for chapter in chapters:
-            print(f'Processing Episode {ep} Chapter {chapter}')
-            script_jp = f'{jp_script_base}{ep}_{chapter}.txt'
-            script_cn = f'{cn_script_base}{ep}_{chapter}.txt'
-            if not os.path.exists(script_jp):
-                break
+        # 处理每个EP和章节
+        for ep, chapters in ep_list:
+            for chapter in chapters:
+                print(f'Processing Episode {ep} Chapter {chapter}')
+                script_jp = f'{jp_script_base}{ep}_{chapter}.txt'
+                script_cn = f'{cn_script_base}{ep}_{chapter}.txt'
+                if not os.path.exists(script_jp):
+                    break
 
-            # 读取日文和中文的txt文件
-            with open(script_jp, 'r', encoding='utf-8') as f:
-                lines_jp = f.read().splitlines()
-                # 翼1特殊处理
-                if ep == "tsubasa" and chapter == 1:
-                    lines_jp_nc = copy.deepcopy(lines_jp)
-            with open(script_cn, 'r', encoding='utf-8') as f:
-                lines_cn = f.read().splitlines()
+                # 读取日文和中文的txt文件
+                with open(script_jp, 'r', encoding='utf-8') as f:
+                    lines_jp = f.read().splitlines()
+                    # 翼1特殊处理
+                    if ep == "tsubasa" and chapter == 1:
+                        lines_jp_nc = copy.deepcopy(lines_jp)
+                with open(script_cn, 'r', encoding='utf-8') as f:
+                    lines_cn = f.read().splitlines()
 
-            # 在 target_script 中查找章节的开始
-            chapter_script = target_script[:]
-            line_idx = next((i for i, x in enumerate(chapter_script) if x.startswith(TEXTLINE_pattern)), len(chapter_script)) + 1
-            chapter_script = chapter_script[:line_idx]
-            chapter_script = '\n'.join(chapter_script)
+                # 在 target_script 中查找章节的开始
+                chapter_script = target_script[:]
+                line_idx = next((i for i, x in enumerate(chapter_script) if x.startswith(TEXTLINE_pattern)), len(chapter_script)) + 1
+                chapter_script = chapter_script[:line_idx]
+                chapter_script = '\n'.join(chapter_script)
 
-            replaced_pos = 0
+                replaced_pos = 0
 
-            # 遍历日文txt的每一行
-            for i in range(len(lines_jp)):
-                if i < len(lines_cn) and lines_cn[i]:
-                    lines_jp[i] = lines_jp[i].translate(trans_table_jp)
-                    lines_cn[i] = replace_alphanum(lines_cn[i]).translate(trans_table_cn)
+                # 遍历日文txt的每一行
+                for i in range(len(lines_jp)):
+                    if i < len(lines_cn) and lines_cn[i]:
+                        lines_jp[i] = lines_jp[i].translate(trans_table_jp)
+                        lines_cn[i] = replace_alphanum(lines_cn[i]).translate(trans_table_cn)
 
-                    # 保存所有匹配方式的结果及其位置
-                    matches = []
+                        # 保存所有匹配方式的结果及其位置
+                        matches = []
 
-                    for fun in [lambda x: x + '@', lambda x: x + "'"]:
-                        match = fun(lines_jp[i])
-                        match_nc = fun(lines_jp_nc[i]) if ep == "tsubasa" and chapter == 1 else None # 翼1特殊处理
-                        pos = chapter_script.find(match, replaced_pos) if match else -1
-                        pos_nc = chapter_script.find(match_nc, replaced_pos) if match_nc else -1 # 翼1特殊处理
+                        for fun in [lambda x: x + '@', lambda x: x + "'"]:
+                            match = fun(lines_jp[i])
+                            match_nc = fun(lines_jp_nc[i]) if ep == "tsubasa" and chapter == 1 else None # 翼1特殊处理
+                            pos = chapter_script.find(match, replaced_pos) if match else -1
+                            pos_nc = chapter_script.find(match_nc, replaced_pos) if match_nc else -1 # 翼1特殊处理
 
-                        if pos >= replaced_pos:
-                            matches.append((pos, match, fun(lines_cn[i])))
-                        elif pos_nc >= replaced_pos:
-                            matches.append((pos_nc, match_nc, fun(lines_cn[i]))) # 翼1特殊处理
+                            if pos >= replaced_pos:
+                                matches.append((pos, match, fun(lines_cn[i])))
+                            elif pos_nc >= replaced_pos:
+                                matches.append((pos_nc, match_nc, fun(lines_cn[i]))) # 翼1特殊处理
 
-                    # 替换最早出现的匹配项
-                    if matches:
-                        matches.sort()  # 按匹配项在脚本中的位置排序
-                        match0 = matches[0]
-                        replace_pos = chapter_script.find(match0[1], replaced_pos)
-                        chapter_script = chapter_script[:replace_pos] + match0[2] + chapter_script[replace_pos + len(match0[1]):]
-                        replaced_pos = replace_pos + len(match0[2])
+                        # 替换最早出现的匹配项
+                        if matches:
+                            matches.sort()  # 按匹配项在脚本中的位置排序
+                            match0 = matches[0]
+                            replace_pos = chapter_script.find(match0[1], replaced_pos)
+                            chapter_script = chapter_script[:replace_pos] + match0[2] + chapter_script[replace_pos + len(match0[1]):]
+                            replaced_pos = replace_pos + len(match0[2])
 
-            # 删多余空格
-            chapter_script = re.sub(SPACE_pattern, lambda m: SPACE_replace.format(text=m.group(1)), chapter_script)
-            output += chapter_script + '\n'
-            target_script = target_script[line_idx:]
-    
+                # 删多余空格
+                chapter_script = re.sub(SPACE_pattern, lambda m: SPACE_replace.format(text=m.group(1)), chapter_script)
+                output += chapter_script + '\n'
+                target_script = target_script[line_idx:]
+        return output, target_script
+
     # 2.2.2 替换注释
     def replace_annotations(output, grimoire_json):
         lines = output.splitlines()
@@ -307,68 +309,79 @@ def main_text(target_script, grimoire_json, chapter_lines, tips_lines, character
                 
         return '\n'.join(lines)
 
-    output = replace_annotations(output, grimoire_json)
-
     # 2.2.3 替换章节标题、Tips和Characters
-    output = re.sub('\'うみねこのなく頃に','\'海猫鸣泣之时',output)
+    def replace_titles_tips_characters(output, chapter_lines, tips_lines, characters_lines):
+        output = re.sub('\'うみねこのなく頃に','\'海猫鸣泣之时',output)
 
-    # 解析Tips和Characters
-    tips_pairs = []
-    for i, line in enumerate(tips_lines, start=1):
-        parts = line.split(',')
-        tip1 = parts[0].strip().strip("'")
-        tip2 = parts[1].strip().strip("'")
-        tips_pairs.append((tip1, tip2))
-    characters_pairs = []
-    for i, line in enumerate(characters_lines, start=1):
-        parts = line.split(',')
-        character1 = parts[0].strip().strip("'")
-        character2 = parts[1].strip().strip("'")
-        characters_pairs.append((character1, character2))
+        # 解析Tips和Characters
+        tips_pairs = []
+        for i, line in enumerate(tips_lines, start=1):
+            parts = line.split(',')
+            tip1 = parts[0].strip().strip("'")
+            tip2 = parts[1].strip().strip("'")
+            tips_pairs.append((tip1, tip2))
+        characters_pairs = []
+        for i, line in enumerate(characters_lines, start=1):
+            parts = line.split(',')
+            character1 = parts[0].strip().strip("'")
+            character2 = parts[1].strip().strip("'")
+            characters_pairs.append((character1, character2))
 
-    # 替换计数器
-    chapter_i = 0
-    tip_i = 0
-    character_i = 0
-    updated_lines = []
+        # 替换计数器
+        chapter_i = 0
+        tip_i = 0
+        character_i = 0
+        updated_lines = []
 
-    for line in output.splitlines():
-        match_chapter = re.match(CHAPTER_pattern, line)
-        match_tip = re.match(TIP_pattern, line)
-        match_char = re.match(CHAR_pattern, line)
-        # 替换章节标题
-        if match_chapter and chapter_i < len(chapter_lines):
-            chapter_line = chapter_lines[chapter_i].translate(trans_table_chapter) # 替换章节标题字符
-            updated_lines.append(f"{match_chapter.group(1)}'{chapter_line}'\n")
-            chapter_i += 1
-        #替换Tips
-        elif match_tip and tip_i < len(tips_pairs) :
-            prefix = match_tip.group(1)
-            suffix = match_tip.group(6)
-            tips_title, tips_text = tips_pairs[tip_i]
-            tips_text = replace_alphanum(tips_text)
-            tip_i += 1
-            new_line = f"{prefix}'{tips_title}', '{tips_text}'{suffix}\n"
-            updated_lines.append(new_line)
-        # 替换Characters
-        elif match_char and character_i < len(characters_pairs):
-            prefix = match_char.group(1)
-            suffix = match_char.group(4)
-            char_title, char_text = characters_pairs[character_i]
-            char_text = replace_alphanum(char_text)
-            character_i += 1
-            new_line = f"{prefix}'{char_title}', '{char_text}'{suffix}\n"
-            updated_lines.append(new_line)
-        else:
-            updated_lines.append(line + '\n')
-    output = ''.join(updated_lines)
+        for line in output.splitlines():
+            match_chapter = re.match(CHAPTER_pattern, line)
+            match_tip = re.match(TIP_pattern, line)
+            match_char = re.match(CHAR_pattern, line)
+            # 替换章节标题
+            if match_chapter and chapter_i < len(chapter_lines):
+                chapter_line = chapter_lines[chapter_i].translate(trans_table_chapter) # 替换章节标题字符
+                updated_lines.append(f"{match_chapter.group(1)}'{chapter_line}'\n")
+                chapter_i += 1
+            #替换Tips
+            elif match_tip and tip_i < len(tips_pairs) :
+                prefix = match_tip.group(1)
+                suffix = match_tip.group(6)
+                tips_title, tips_text = tips_pairs[tip_i]
+                tips_text = replace_alphanum(tips_text)
+                tip_i += 1
+                new_line = f"{prefix}'{tips_title}', '{tips_text}'{suffix}\n"
+                updated_lines.append(new_line)
+            # 替换Characters
+            elif match_char and character_i < len(characters_pairs):
+                prefix = match_char.group(1)
+                suffix = match_char.group(4)
+                char_title, char_text = characters_pairs[character_i]
+                char_text = replace_alphanum(char_text)
+                character_i += 1
+                new_line = f"{prefix}'{char_title}', '{char_text}'{suffix}\n"
+                updated_lines.append(new_line)
+            else:
+                updated_lines.append(line + '\n')
+        return ''.join(updated_lines)
 
-    # 2.2.4 替换选项与人名
-    for name_jp, name_cn in name_map.items():
-        if name_jp in name_map_chap:
-            output = re.sub(rf"'{re.escape(name_jp)}\s?", f"'{name_cn.translate(trans_table_chapter)}", output)
-        else:
-            output = re.sub(rf"'{re.escape(name_jp)}\s?", f"'{name_cn}", output)
+    # 2.2.4 替换选项和人名
+    def replace_names(output):
+        for name_jp, name_cn in name_map.items():
+            if name_jp in name_map_chap:
+                output = re.sub(rf"'{re.escape(name_jp)}\s?", f"'{name_cn.translate(trans_table_chapter)}", output)
+            else:
+                output = re.sub(rf"'{re.escape(name_jp)}\s?", f"'{name_cn}", output)
+        return output
+
+    # 执行
+    output, target_script = replace_main_text(target_script)
+    print("正文替换完成。")
+    output = replace_annotations(output, grimoire_json)
+    print("注释替换完成。")
+    output = replace_titles_tips_characters(output, chapter_lines, tips_lines, characters_lines)
+    print("章节标题、Tips和Characters替换完成。")
+    output = replace_names(output)
+    print("选项和人名替换完成。")
 
     return output, target_script
 
@@ -402,7 +415,6 @@ characters_lines = parse('characters.txt')
 
 # 3.2 替换文本
 output, trans_target_script = main_text(target_script, grimoire_json, chapter_lines, tips_lines, characters_lines)
-
 script_lines = (output + '\n' + '\n'.join(trans_target_script)).splitlines()
 
 # 3.3 增加代码
