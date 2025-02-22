@@ -56,11 +56,9 @@ grim_title_replaces = {
     "(.*)@>$": "{capture}{snum}@>", # 已有ruby时
     "(.*)(.$)": "{capture_pre}@b.@<{capture_sub}{snum}@>" # 没有ruby时
 }
-grim_explain_pattern = "@[@z70.@r@r{grim_contents}.*?@]" # 文本后条目注释框架
-grim_content_pattern ="{space}{num}. {explain}" # 文本后条目注释（space由括号决定）
-
-# 待用
-# '右代宫　留弗夫@r@v08/11200024.｢让治是真的了不起啊｡@k@v08/11200025.下次ゞ就让他给我们家的笨孩子分点指甲@b.@<垢¹@>吧｡｣@[@z70.@r@r　1. 出自日本谚语“把指甲垢煎了喝掉”。意为效仿优秀者。@]'
+grim_quote_pattern = "[｣』]'$" # 行尾引号
+grim_explain_pattern = "@[@z70.@r@r{grim_contents}@]" # 文本后条目注释框架
+grim_content_pattern ="{space}{num}. {explain}" # 文本后条目注释
 
 # 选项、人名替换
 name_map_chap = {
@@ -266,6 +264,50 @@ def main_text(target_script, grimoire_json, chapter_lines, tips_lines, character
             target_script = target_script[line_idx:]
     
     # 2.2.2 替换注释
+    def replace_annotations(output, grimoire_json):
+        lines = output.splitlines()
+        idxs = [i for i, line in enumerate(lines) if re.search(grim_pos_pattern, line)]  # 包含魔导书提示的行
+        
+        for idx in idxs:
+            # 删除所有grim_pos_pattern
+            lines[idx] = re.sub(grim_pos_pattern, '', lines[idx])  # 删除魔导书提示
+            
+            # 更新items中的value
+            item = grimoire_json[idxs.index(idx)]
+            for key in item:
+                item[key] = replace_alphanum(item[key]).translate(trans_table_cn)
+            
+            # 读取所有以“title数字”为开头的key所对应的value
+            titles = [item[key] for key in item if key.startswith('title')]
+            explains = [item[key] for key in item if key.startswith('explain')]
+            
+            # 开始修改
+            grim_contents = "" # 初始化注释内容
+            for i, (title, explain) in enumerate(zip(titles, explains)):
+                if explain != "": # 排除没有注释的条目
+                    # 注释标题替换
+                    keys = list(grim_title_replaces.keys())
+                    match_title = re.search(keys[0], title)
+                    if match_title:  # 包含ruby的情况
+                        title = re.sub(keys[0], grim_title_replaces[keys[0]].format(capture=match_title.group(1), snum=grim_snum_sequence[i]), title)
+                    else:
+                        match_title = re.search(keys[1], title)
+                        if match_title: # 不包含ruby的情况
+                            title = re.sub(keys[1], grim_title_replaces[keys[1]].format(capture_pre=match_title.group(1), capture_sub=match_title.group(2), snum=grim_snum_sequence[i]), title)
+                    lines[idx] = lines[idx].replace(titles[i], title)
+
+                    # 注释内容替换
+                    match_quote = re.search(grim_quote_pattern, lines[idx])
+                    space = "　" if match_quote else "" # 根据是否有引号确定space
+                    num = str(i + 1) # 根据i确定序号
+                    grim_content = grim_content_pattern.format(space=space, num=num, explain=explain)
+                    grim_contents += grim_content + '@r'
+            if explain != "":
+                lines[idx] = lines[idx][:-1] + grim_explain_pattern.format(grim_contents=grim_contents) + "'"
+                
+        return '\n'.join(lines)
+
+    output = replace_annotations(output, grimoire_json)
 
     # 2.2.3 替换章节标题、Tips和Characters
     output = re.sub('\'うみねこのなく頃に','\'海猫鸣泣之时',output)
@@ -360,6 +402,7 @@ characters_lines = parse('characters.txt')
 
 # 3.2 替换文本
 output, trans_target_script = main_text(target_script, grimoire_json, chapter_lines, tips_lines, characters_lines)
+
 script_lines = (output + '\n' + '\n'.join(trans_target_script)).splitlines()
 
 # 3.3 增加代码
