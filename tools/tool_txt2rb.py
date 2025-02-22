@@ -208,7 +208,7 @@ def main_text(target_script, grimoire_json, chapter_lines, tips_lines, character
         # 处理每个EP和章节
         for ep, chapters in ep_list:
             for chapter in chapters:
-                print(f'Processing Episode {ep} Chapter {chapter}')
+                print(f'正在替换{ep}_{chapter}。')
                 script_jp = f'{jp_script_base}{ep}_{chapter}.txt'
                 script_cn = f'{cn_script_base}{ep}_{chapter}.txt'
                 if not os.path.exists(script_jp):
