@@ -50,7 +50,7 @@ CHAPTER_hans = "è东两为义乡书亚亲仪们伙伞传伦侦关则剧动劳�
 CHAPTER_hans_REPLACE = "轜辧辷迚迯逎逓逧逹遖邉邨醗釖釛釟釡釶釼鈎鈩鈬銹鋲錺錻鍄鎭鎹鏥鐚鐡鑁鑓鑚鑛閇閊閖閙閠閧陦隲靤靫靱靹鞆鞐韈韮韲頚頴頽顋颪飃飜飮餝餠饂馼駈駲騨髞髢髴鬪鮃鮖鮗鮟鮴鯏鯑鯒鯣鯱鯲鯵鰄鰊鰌鰐鰕鰛鰮鰯鰰鰺鱇鱚鱶鳫鳬鳰鴎鴪鴫鴬鵄鵆鵈鵐鵞鵤鵺鶫鷄鷆麁麕麪麹麿鼈鼡龝"
 trans_table_chapter = str.maketrans(CHAPTER_hans, CHAPTER_hans_REPLACE)
 # 注释替换
-grim_pos_pattern = r"（.*?详见魔导书.*?条目）" # 匹配魔导书位置
+grim_pos_pattern = r"（详见魔导书.*?条目）" # 匹配魔导书位置
 grim_snum_sequence = "¹²³⁴⁵⁶⁷⁸⁹" # 序列数字
 grim_title_replaces = {
     "(.*)@>$": "{capture}{snum}@>", # 已有ruby时
@@ -291,11 +291,11 @@ def main_text(target_script, grimoire_json, chapter_lines, tips_lines, character
                     keys = list(grim_title_replaces.keys())
                     match_title = re.search(keys[0], title)
                     if match_title:  # 包含ruby的情况
-                        title = re.sub(keys[0], grim_title_replaces[keys[0]].format(capture=match_title.group(1), snum=grim_snum_sequence[i]), title)
+                        title = re.sub(keys[0], grim_title_replaces[keys[0]].format(capture=match_title.group(1), snum=grim_snum_sequence[i]), title, count=1)
                     else:
                         match_title = re.search(keys[1], title)
                         if match_title: # 不包含ruby的情况
-                            title = re.sub(keys[1], grim_title_replaces[keys[1]].format(capture_pre=match_title.group(1), capture_sub=match_title.group(2), snum=grim_snum_sequence[i]), title)
+                            title = re.sub(keys[1], grim_title_replaces[keys[1]].format(capture_pre=match_title.group(1), capture_sub=match_title.group(2), snum=grim_snum_sequence[i]), title, count=1)
                     lines[idx] = lines[idx].replace(titles[i], title)
 
                     # 注释内容替换
