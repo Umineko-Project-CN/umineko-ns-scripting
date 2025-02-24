@@ -6,10 +6,9 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # 路径
-root_dir = os.path.dirname(os.path.abspath(__file__))
-menu_path = os.path.abspath(os.path.join(root_dir, r"script\cn\menu.txt"))  # menu路径
-chars_path = os.path.abspath(os.path.join(root_dir, r"characters.txt"))
-tips_path = os.path.abspath(os.path.join(root_dir, r"tips.txt"))
+menu_path = os.path.abspath(r"script\cn\menu.txt")  # menu路径
+chars_path = os.path.abspath(r"characters.txt")
+tips_path = os.path.abspath(r"tips.txt")
 
 # 首尾行
 chars_start_line = ";Char texts"
@@ -20,21 +19,38 @@ tips_start_line = ";Tips texts"
 r_tips_end_line = tips_end_line = ";ep8"
 
 # 匹配
-BRACKET_replaces = {
-    # 特殊排序
+replaces = {
+    # Charcters特殊排序
     r"chars_(.*?)_sak_": lambda m: rf"chars_{m.group(1)}_s99_", # 樱太郎
     r"chars_6_3_ama_1": r"chars_6_3_enj_99", # EP6天草
     r"(.*)chars_6_3_enj_2(.*)": r"", # EP6缘寿多余
+
     # 特殊标点
     r"，": r"ゞ",
     r"\.": r"〕",
+
     # 符号替换
     r"\{n\}": r"@r", # 换行符
     r"\{fit\}": r"", # fit
     r"\{w:[0-9]+:}": r"", # 宽度
+    r"\{e:0([0-9]+):(.*?)\}": lambda m: rf"@z{m.group(1)}.{m.group(2)}@z100.", # 红字
     r"\{ruby:(.*?):(.*?)\}": lambda m: rf"@b{m.group(1)}.@<{m.group(2)}@>", # 注音
     r"\{p:[0-9]+:(.*?)\}": lambda m: rf"{m.group(1)}", # 特殊字体
     r"\{c:FF0000:(.*?)\}": lambda m: rf"@c900{m.group(1)}@c.", # 红字
+
+    # Tips SSVD
+    r"@bS〕 S〕 Van Dine.@<SSVD@>": r"SSVD",
+    
+    # Tips NS版独有换行
+    r"以及作为利息，": r"@r以及作为利息，",
+    r"此外，威力可根据不同的命中部位来调节。": r"@r此外，威力可根据不同的命中部位来调节。",
+    r"由于归根究底只是好意的编纂，": r"@r由于归根究底只是好意的编纂，",
+    r"启动它的功效需要巨大的代价，": r"@r启动它的功效需要巨大的代价，",
+    r"因此，她们多是被召唤于担任特别典礼等场合的仪仗工作。": r"@r因此，她们多是被召唤于担任特别典礼等场合的仪仗工作。",
+    r"由于这两个称号分别源自不同的魔法大系，" : r"@r由于这两个称号分别源自不同的魔法大系，",
+    r"其结果，": r"@r其结果，",
+    r"从一切制约中解放，": r"@r从一切制约中解放，",
+    r"至于为何畏惧着进化为上位的存在，": r"@r至于为何畏惧着进化为上位的存在，",
 }
 
 # 读取内容的匹配
@@ -62,7 +78,7 @@ def menu_parse(start_line, end_line, LINE_pattern):
     # 应用替换规则
     replaced_text = []
     for line in menu_text:
-        for pattern, replacement in BRACKET_replaces.items():
+        for pattern, replacement in replaces.items():
             if callable(replacement):
                 line = re.sub(pattern, replacement, line)
             else:
@@ -93,20 +109,30 @@ def natural_key(item):
     
     return [sort_key(c) for c in item[0]]
 
+# 检查并处理 r_tips_lines 和 tips_lines
+def process_tips_lines(r_tips_lines, tips_lines):
+    for i in range(len(tips_lines)):
+        tips_match = re.search(r"(.*?@r@r)", tips_lines[i])
+        if tips_match:
+            first_line = tips_match.group(1)
+            if first_line == r_tips_lines[i] + "@r@r":
+                tips_lines[i] = tips_lines[i].replace(first_line, '', 1)
+    return list(zip(r_tips_lines, tips_lines))
+
 # 开始处理
 chars_lines = menu_parse(chars_start_line, chars_end_line, chars_LINE_pattern)
 chars_lines.sort(key=natural_key)
 
 r_tips_lines = menu_parse(r_tips_start_line, r_tips_end_line, r_tips_LINE_pattern)
 tips_lines = menu_parse(tips_start_line, tips_end_line, tips_LINE_pattern)
-tips_lines = list(zip(r_tips_lines, tips_lines))
+tips_lines = process_tips_lines(r_tips_lines, tips_lines)
 
 # 保存到文件
 with open(chars_path, 'w', encoding='utf-8') as output_file:
     for _, line in chars_lines:
         output_file.write(f"{line}\n")
-# with open(tips_path, 'w', encoding='utf-8') as output_file:
-#     for a, b in tips_lines:
-#         output_file.write(f"'{a}', '{b}'\n")
+with open(tips_path, 'w', encoding='utf-8') as output_file:
+    for a, b in tips_lines:
+        output_file.write(f"'{a}', '{b}'\n")
 
 print(f"已保存。")

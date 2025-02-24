@@ -6,9 +6,8 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # 路径
-root_dir = os.path.dirname(os.path.abspath(__file__))
-JPscript = os.path.abspath(os.path.join(root_dir, "main.rb"))  # .rs文件路径
-JPoutput_dir = os.path.abspath(os.path.join(root_dir, "story_ns"))  # 输出文件保存目录
+JPscript = os.path.abspath("main.rb")  # .rs文件路径
+JPoutput_dir = os.path.abspath("story_ns")  # 输出文件保存目录
 os.makedirs('JPoutput_dir', exist_ok=True)
 
 # 表达式
@@ -200,6 +199,7 @@ while i < num_lines and current_chapter_index < len(remaining_chapters):
         # 文件名格式化
         filename = FILENAME_pattern.format(EP=ep, CH=ch)
         output_path = os.path.join(JPoutput_dir, filename)
+        print(output_path)
         
         # 写入文件
         with open(output_path, 'w', encoding='utf-8') as file:
