@@ -150,24 +150,17 @@ target_bgs = 'snr.write_bgs'
 
 # 图片调用：end_all00
 target_lines_endall00 = [
-    "s.ins 0xcb",
-    "s.ins 0xc1, 3, byte(2), 0, byte(1), 2402",
-    "s.ins 0xc3, 3, 5, byte(1), -3",
+"s.ins 0x4f, :addr_0x92d69, []",
+"s.ins 0x4f, :addr_0x92dcd, [412, -1]",
+"s.ins 0xcb",
+"s.ins 0xc1, 18, byte(3), 0, byte(1), 5801",
+"s.ins 0xc3, 18, 5, byte(1), -18",
 ]
 insert_lines_endall00 = [
+    "s.ins 0xcb",
     "s.ins 0xc1, 19, byte(1), 0, byte(0), end_all00_01",
-    "s.ins 0xc3, 19, 6, byte(1), 0", # 初始透明
-    "s.ins 0xc3, 19, 6, byte(1), 255, 30", # 淡入
-    "s.ins 0x83, byte(0), 60", # 等待
-    "s.ins 0xc3, 19, 6, byte(1), 0, 30", # 淡出
-    "s.ins 0xc2, 19, byte(0) ", # 隐藏
-
+    "s.ins 0xcb",
     "s.ins 0xc1, 19, byte(1), 0, byte(0), end_all00_02",
-    "s.ins 0xc3, 19, 6, byte(1), 0", # 初始透明
-    "s.ins 0xc3, 19, 6, byte(1), 255, 30", # 淡入
-    "s.ins 0x83, byte(0), 60", # 等待
-    "s.ins 0xc3, 19, 6, byte(1), 0, 30", # 淡出
-    "s.ins 0xc2, 19, byte(0) ", # 隐藏
 ]
 
 # # # # # # # # # # # # # # #
@@ -291,12 +284,12 @@ def main_text(target_script, grimoire_json, chapter_lines, tips_lines, character
                     keys = list(grim_title_replaces.keys())
                     match_title = re.search(keys[0], title)
                     if match_title:  # 包含ruby的情况
-                        title = re.sub(keys[0], grim_title_replaces[keys[0]].format(capture=match_title.group(1), snum=grim_snum_sequence[i]), title, count=1)
+                        title = re.sub(keys[0], grim_title_replaces[keys[0]].format(capture=match_title.group(1), snum=grim_snum_sequence[i]), title)
                     else:
                         match_title = re.search(keys[1], title)
                         if match_title: # 不包含ruby的情况
-                            title = re.sub(keys[1], grim_title_replaces[keys[1]].format(capture_pre=match_title.group(1), capture_sub=match_title.group(2), snum=grim_snum_sequence[i]), title, count=1)
-                    lines[idx] = lines[idx].replace(titles[i], title)
+                            title = re.sub(keys[1], grim_title_replaces[keys[1]].format(capture_pre=match_title.group(1), capture_sub=match_title.group(2), snum=grim_snum_sequence[i]), title)
+                    lines[idx] = lines[idx].replace(titles[i], title, 1)
 
                     # 注释内容替换
                     match_quote = re.search(grim_quote_pattern, lines[idx])
